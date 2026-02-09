@@ -1,0 +1,21 @@
+{
+  "name": "demo",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.10",
+    "@ffmpeg/util": "^0.12.1",
+    "@stackblitz/sdk": "^1.11.0",
+    "@stacked-alpha-video/svg": "*",
+    "@stacked-alpha-video/webgl": "*",
+    "@stacked-alpha-video/webgpu": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0"
+  }
+}

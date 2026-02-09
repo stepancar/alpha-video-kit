@@ -1,0 +1,434 @@
+import sdk from '@stackblitz/sdk';
+
+// A public stacked-alpha sample video URL for StackBlitz demos
+const SAMPLE_VIDEO_URL = 'https://stepancar.github.io/alpha-video-kit/sample-stacked.mp4';
+
+interface TabDef {
+  label: string;
+  code: string;
+  stackblitz: {
+    title: string;
+    description: string;
+    deps: Record<string, string>;
+    indexHtml: string;
+    mainTs: string;
+  };
+}
+
+const tabs: TabDef[] = [
+  {
+    label: 'WebGL',
+    code: `<span class="comment">// Install</span>
+<span class="keyword">npm install</span> <span class="string">@stacked-alpha-video/webgl</span>
+
+<span class="comment">// Option 1: Web Component</span>
+<span class="keyword">import</span> <span class="string">'@stacked-alpha-video/webgl/register'</span>;
+
+&lt;stacked-alpha-video-gl&gt;
+  &lt;video autoplay muted loop playsinline&gt;
+    &lt;source src=<span class="string">"video-stacked.mp4"</span> type=<span class="string">"video/mp4"</span> /&gt;
+  &lt;/video&gt;
+&lt;/stacked-alpha-video-gl&gt;
+
+<span class="comment">// Option 2: Low-level API</span>
+<span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@stacked-alpha-video/webgl'</span>;
+
+<span class="keyword">const</span> renderer = createRenderer({ canvas });
+renderer.drawFrame(videoElement);
+renderer.destroy();`,
+    stackblitz: {
+      title: 'Stacked Alpha Video — WebGL',
+      description: 'Play transparent video on the web using WebGL renderer',
+      deps: { '@stacked-alpha-video/webgl': '^0.1.0' },
+      indexHtml: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stacked Alpha Video — WebGL Demo</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #e4e4ef;
+    }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    p { color: #8888a0; margin-bottom: 24px; }
+    .demo {
+      position: relative;
+      background:
+        repeating-conic-gradient(#2a2a3e 0% 25%, #1e1e30 0% 50%) 50% / 20px 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+    canvas { display: block; width: 400px; height: 400px; }
+  </style>
+</head>
+<body>
+  <h1>WebGL Renderer</h1>
+  <p>Transparent video rendered with @stacked-alpha-video/webgl</p>
+  <div class="demo">
+    <canvas id="canvas"></canvas>
+  </div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>`,
+      mainTs: `import { createRenderer } from '@stacked-alpha-video/webgl';
+
+const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+const video = document.createElement('video');
+video.src = '${SAMPLE_VIDEO_URL}';
+video.crossOrigin = 'anonymous';
+video.loop = true;
+video.muted = true;
+video.playsInline = true;
+
+const renderer = createRenderer({ canvas });
+
+video.addEventListener('loadeddata', () => {
+  video.play();
+});
+
+function loop() {
+  if (video.readyState >= 2) {
+    renderer.drawFrame(video);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+`,
+    },
+  },
+  {
+    label: 'WebGPU',
+    code: `<span class="comment">// Install</span>
+<span class="keyword">npm install</span> <span class="string">@stacked-alpha-video/webgpu</span>
+
+<span class="comment">// Option 1: Web Component</span>
+<span class="keyword">import</span> <span class="string">'@stacked-alpha-video/webgpu/register'</span>;
+
+&lt;stacked-alpha-video-gpu&gt;
+  &lt;video autoplay muted loop playsinline&gt;
+    &lt;source src=<span class="string">"video-stacked.mp4"</span> type=<span class="string">"video/mp4"</span> /&gt;
+  &lt;/video&gt;
+&lt;/stacked-alpha-video-gpu&gt;
+
+<span class="comment">// Option 2: Low-level API (async)</span>
+<span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@stacked-alpha-video/webgpu'</span>;
+
+<span class="keyword">const</span> renderer = <span class="keyword">await</span> createRenderer({ canvas });
+renderer.drawFrame(videoElement);
+renderer.destroy();`,
+    stackblitz: {
+      title: 'Stacked Alpha Video — WebGPU',
+      description: 'Play transparent video on the web using WebGPU renderer',
+      deps: { '@stacked-alpha-video/webgpu': '^0.1.0' },
+      indexHtml: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stacked Alpha Video — WebGPU Demo</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #e4e4ef;
+    }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    p { color: #8888a0; margin-bottom: 24px; }
+    .demo {
+      position: relative;
+      background:
+        repeating-conic-gradient(#2a2a3e 0% 25%, #1e1e30 0% 50%) 50% / 20px 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+    canvas { display: block; width: 400px; height: 400px; }
+    .error { color: #fb923c; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>WebGPU Renderer</h1>
+  <p>Transparent video rendered with @stacked-alpha-video/webgpu</p>
+  <div class="demo">
+    <canvas id="canvas"></canvas>
+  </div>
+  <div id="error" class="error"></div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>`,
+      mainTs: `import { createRenderer } from '@stacked-alpha-video/webgpu';
+
+const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+const errorEl = document.getElementById('error')!;
+const video = document.createElement('video');
+video.src = '${SAMPLE_VIDEO_URL}';
+video.crossOrigin = 'anonymous';
+video.loop = true;
+video.muted = true;
+video.playsInline = true;
+
+async function init() {
+  try {
+    const renderer = await createRenderer({ canvas });
+
+    video.addEventListener('loadeddata', () => {
+      video.play();
+    });
+
+    function loop() {
+      if (video.readyState >= 2) {
+        renderer.drawFrame(video);
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  } catch (e) {
+    errorEl.textContent =
+      'WebGPU is not supported in this browser. Try Chrome or Edge.';
+  }
+}
+init();
+`,
+    },
+  },
+  {
+    label: 'SVG',
+    code: `<span class="comment">// Install</span>
+<span class="keyword">npm install</span> <span class="string">@stacked-alpha-video/svg</span>
+
+<span class="comment">// Option 1: Web Component</span>
+<span class="keyword">import</span> <span class="string">'@stacked-alpha-video/svg/register'</span>;
+
+&lt;stacked-alpha-video-svg&gt;
+  &lt;video autoplay muted loop playsinline&gt;
+    &lt;source src=<span class="string">"video-stacked.mp4"</span> type=<span class="string">"video/mp4"</span> /&gt;
+  &lt;/video&gt;
+&lt;/stacked-alpha-video-svg&gt;
+
+<span class="comment">// Option 2: Low-level API with mode selection</span>
+<span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@stacked-alpha-video/svg'</span>;
+
+<span class="comment">// 'canvas' (default) or 'svg-filter'</span>
+<span class="keyword">const</span> renderer = createRenderer({ canvas, mode: <span class="string">'svg-filter'</span> });
+renderer.drawFrame(videoElement);
+renderer.destroy();`,
+    stackblitz: {
+      title: 'Stacked Alpha Video — SVG Filter',
+      description: 'Play transparent video on the web using SVG filter / Canvas 2D renderer',
+      deps: { '@stacked-alpha-video/svg': '^0.1.0' },
+      indexHtml: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stacked Alpha Video — SVG Filter Demo</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #e4e4ef;
+    }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    p { color: #8888a0; margin-bottom: 24px; }
+    .demo {
+      position: relative;
+      background:
+        repeating-conic-gradient(#2a2a3e 0% 25%, #1e1e30 0% 50%) 50% / 20px 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+    canvas { display: block; width: 400px; height: 400px; }
+    .controls {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+    }
+    button {
+      padding: 6px 16px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #2a2a3e;
+      color: #e4e4ef;
+      cursor: pointer;
+    }
+    button.active {
+      background: #7c5cfc;
+      border-color: #7c5cfc;
+    }
+  </style>
+</head>
+<body>
+  <h1>SVG / Canvas 2D Renderer</h1>
+  <p>Transparent video rendered with @stacked-alpha-video/svg</p>
+  <div class="demo">
+    <canvas id="canvas"></canvas>
+  </div>
+  <div class="controls">
+    <button id="btn-canvas" class="active">Canvas 2D mode</button>
+    <button id="btn-svg">SVG Filter mode</button>
+  </div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>`,
+      mainTs: `import { createRenderer } from '@stacked-alpha-video/svg';
+import type { SvgRendererMode } from '@stacked-alpha-video/svg';
+
+const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+const video = document.createElement('video');
+video.src = '${SAMPLE_VIDEO_URL}';
+video.crossOrigin = 'anonymous';
+video.loop = true;
+video.muted = true;
+video.playsInline = true;
+
+let currentMode: SvgRendererMode = 'canvas';
+let renderer = createRenderer({ canvas, mode: currentMode });
+
+video.addEventListener('loadeddata', () => {
+  video.play();
+});
+
+function loop() {
+  if (video.readyState >= 2) {
+    renderer.drawFrame(video);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// Mode switcher
+document.getElementById('btn-canvas')!.addEventListener('click', () => {
+  switchMode('canvas');
+});
+document.getElementById('btn-svg')!.addEventListener('click', () => {
+  switchMode('svg-filter');
+});
+
+function switchMode(mode: SvgRendererMode) {
+  if (mode === currentMode) return;
+  currentMode = mode;
+  renderer.destroy();
+  renderer = createRenderer({ canvas, mode });
+  document.getElementById('btn-canvas')!.classList.toggle('active', mode === 'canvas');
+  document.getElementById('btn-svg')!.classList.toggle('active', mode === 'svg-filter');
+}
+`,
+    },
+  },
+];
+
+function openStackblitz(tab: TabDef) {
+  sdk.openProject(
+    {
+      title: tab.stackblitz.title,
+      description: tab.stackblitz.description,
+      template: 'node',
+      files: {
+        'index.html': tab.stackblitz.indexHtml,
+        'main.ts': tab.stackblitz.mainTs,
+        'package.json': JSON.stringify(
+          {
+            name: tab.stackblitz.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            private: true,
+            type: 'module',
+            scripts: { dev: 'vite', build: 'vite build' },
+            dependencies: tab.stackblitz.deps,
+            devDependencies: { vite: '^6.0.0', typescript: '^5.6.0' },
+          },
+          null,
+          2,
+        ),
+        'tsconfig.json': JSON.stringify(
+          {
+            compilerOptions: {
+              target: 'ES2023',
+              module: 'ESNext',
+              moduleResolution: 'bundler',
+              strict: true,
+              esModuleInterop: true,
+              skipLibCheck: true,
+              lib: ['ES2023', 'DOM'],
+            },
+            include: ['.'],
+          },
+          null,
+          2,
+        ),
+        'vite.config.ts': `import { defineConfig } from 'vite';\nexport default defineConfig({});`,
+      },
+    },
+    { openFile: 'main.ts', newWindow: true },
+  );
+}
+
+export function createApiDocsSection(): HTMLElement {
+  const section = document.createElement('section');
+  section.id = 'api';
+
+  section.innerHTML = `
+    <h2 class="section-title">Usage</h2>
+    <p class="section-subtitle">All packages share the same API surface. Pick the one that fits your needs.</p>
+    <div class="code-tabs" id="api-tabs"></div>
+    <div class="code-block" id="api-code-block">
+      <pre id="api-code"></pre>
+      <button class="stackblitz-btn" id="api-stackblitz-btn">
+        <svg width="16" height="16" viewBox="0 0 28 28" fill="none"><path d="M12.747 16.273h-7.46L18.925 1.5l-3.671 10.227h7.46L9.075 26.5l3.672-10.227z" fill="currentColor"/></svg>
+        Open in StackBlitz
+      </button>
+    </div>
+  `;
+
+  requestAnimationFrame(() => {
+    const tabsContainer = section.querySelector('#api-tabs')!;
+    const codeEl = section.querySelector('#api-code')!;
+    const stackblitzBtn = section.querySelector('#api-stackblitz-btn') as HTMLButtonElement;
+    let activeIndex = 0;
+
+    function setActive(index: number) {
+      activeIndex = index;
+      tabsContainer.querySelectorAll('.code-tab').forEach((t, i) => {
+        t.classList.toggle('active', i === index);
+      });
+      codeEl.innerHTML = tabs[index].code;
+    }
+
+    tabs.forEach((tab, i) => {
+      const tabEl = document.createElement('button');
+      tabEl.className = 'code-tab';
+      tabEl.textContent = tab.label;
+      tabEl.addEventListener('click', () => setActive(i));
+      tabsContainer.appendChild(tabEl);
+    });
+
+    stackblitzBtn.addEventListener('click', () => {
+      openStackblitz(tabs[activeIndex]);
+    });
+
+    setActive(0);
+  });
+
+  return section;
+}
