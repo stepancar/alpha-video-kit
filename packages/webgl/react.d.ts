@@ -1,16 +1,8 @@
+import type React from 'react';
 import type { AlphaVideoKitGL } from './dist/index.js';
 
-interface AlphaVideoKitGLAttributes extends React.HTMLAttributes<AlphaVideoKitGL> {
-  src?: string;
-  crossOrigin?: string;
-  preload?: string;
-  autoPlay?: boolean;
-  loop?: boolean;
-  muted?: boolean;
-  playsInline?: boolean;
-  poster?: string;
-  width?: number | string;
-  height?: number | string;
+interface AlphaVideoKitGLAttributes extends React.VideoHTMLAttributes<AlphaVideoKitGL> {
+  ref?: React.Ref<AlphaVideoKitGL>;
 }
 
 declare module 'react' {

@@ -119,9 +119,9 @@ canvas{display:block;width:100%;height:100%}
       const tick = () => {
         if (!this.#isVisible || !this.#renderer) return;
         this.#renderFrame();
-        this.#vfcId = (this.#video as any).requestVideoFrameCallback(tick);
+        this.#vfcId = this.#video.requestVideoFrameCallback(tick);
       };
-      this.#vfcId = (this.#video as any).requestVideoFrameCallback(tick);
+      this.#vfcId = this.#video.requestVideoFrameCallback(tick);
     } else {
       const tick = () => {
         if (!this.#isVisible || !this.#renderer) return;
@@ -134,7 +134,7 @@ canvas{display:block;width:100%;height:100%}
 
   #stopLoop() {
     if (this.#vfcId) {
-      (this.#video as any).cancelVideoFrameCallback?.(this.#vfcId);
+      this.#video.cancelVideoFrameCallback?.(this.#vfcId);
       this.#vfcId = 0;
     }
     if (this.#rafId) {
