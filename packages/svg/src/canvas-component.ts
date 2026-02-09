@@ -241,6 +241,7 @@ canvas{display:block;width:100%}
       this.#updateDimensions();
     }
     // Draw full video with filter on offscreen (full height)
+    this.#offCtx.clearRect(0, 0, w, fullH);
     this.#offCtx.filter = `url(#${this.#filterId})`;
     this.#offCtx.drawImage(this.#video, 0, 0);
     // Copy top half to visible canvas

@@ -93,6 +93,7 @@ export function createSvgFilterRenderer(
       feOffset!.setAttribute('dy', String(-halfH));
 
       // Draw full video with filter on offscreen (full height)
+      offCtx.clearRect(0, 0, w, fullH);
       offCtx.filter = `url(#${filterId})`;
       offCtx.drawImage(video, 0, 0);
 
