@@ -9,7 +9,6 @@
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.10",
     "@ffmpeg/util": "^0.12.1",
-    "@stackblitz/sdk": "^1.11.0",
     "@alpha-video-kit/svg": "*",
     "@alpha-video-kit/webgl": "*",
     "@alpha-video-kit/webgpu": "*"
