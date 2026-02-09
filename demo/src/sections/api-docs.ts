@@ -108,8 +108,16 @@ renderer.destroy();`,
 <body>
   <h1>WebGL Renderer</h1>
   <p>Transparent video rendered with <code>@alpha-video-kit/webgl</code></p>
-  <div class="demo">
-    <canvas id="canvas"></canvas>
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label">Source <code>(stacked double-height)</code></div>
+      <div class="source"><video id="video" autoplay muted loop playsinline></video></div>
+    </div>
+    <div class="arrow">&rarr;</div>
+    <div class="panel">
+      <div class="panel-label">Result <code>(transparent)</code></div>
+      <div class="result"><canvas id="canvas"></canvas></div>
+    </div>
   </div>
   <script type="module" src="./main.ts"></script>
 </body>
@@ -117,18 +125,11 @@ renderer.destroy();`,
       mainTs: `import { createRenderer } from '@alpha-video-kit/webgl';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-const video = document.createElement('video');
+const video = document.getElementById('video') as HTMLVideoElement;
 video.src = '${SAMPLE_VIDEO_URL}';
 video.crossOrigin = 'anonymous';
-video.loop = true;
-video.muted = true;
-video.playsInline = true;
 
 const renderer = createRenderer({ canvas });
-
-video.addEventListener('loadeddata', () => {
-  video.play();
-});
 
 function loop() {
   if (video.readyState >= 2) {
@@ -177,8 +178,16 @@ renderer.destroy();`,
 <body>
   <h1>WebGPU Renderer</h1>
   <p>Transparent video rendered with <code>@alpha-video-kit/webgpu</code></p>
-  <div class="demo">
-    <canvas id="canvas"></canvas>
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label">Source <code>(stacked double-height)</code></div>
+      <div class="source"><video id="video" autoplay muted loop playsinline></video></div>
+    </div>
+    <div class="arrow">&rarr;</div>
+    <div class="panel">
+      <div class="panel-label">Result <code>(transparent)</code></div>
+      <div class="result"><canvas id="canvas"></canvas></div>
+    </div>
   </div>
   <div id="error" class="error"></div>
   <script type="module" src="./main.ts"></script>
@@ -188,20 +197,13 @@ renderer.destroy();`,
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const errorEl = document.getElementById('error')!;
-const video = document.createElement('video');
+const video = document.getElementById('video') as HTMLVideoElement;
 video.src = '${SAMPLE_VIDEO_URL}';
 video.crossOrigin = 'anonymous';
-video.loop = true;
-video.muted = true;
-video.playsInline = true;
 
 async function init() {
   try {
     const renderer = await createRenderer({ canvas });
-
-    video.addEventListener('loadeddata', () => {
-      video.play();
-    });
 
     function loop() {
       if (video.readyState >= 2) {
@@ -273,8 +275,16 @@ renderer.destroy();`,
 <body>
   <h1>SVG / Canvas 2D Renderer</h1>
   <p>Transparent video rendered with <code>@alpha-video-kit/svg</code></p>
-  <div class="demo">
-    <canvas id="canvas"></canvas>
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label">Source <code>(stacked double-height)</code></div>
+      <div class="source"><video id="video" autoplay muted loop playsinline></video></div>
+    </div>
+    <div class="arrow">&rarr;</div>
+    <div class="panel">
+      <div class="panel-label">Result <code>(transparent)</code></div>
+      <div class="result"><canvas id="canvas"></canvas></div>
+    </div>
   </div>
   <div class="controls">
     <button id="btn-canvas" class="active">Canvas 2D mode</button>
@@ -287,19 +297,12 @@ renderer.destroy();`,
 import type { SvgRendererMode } from '@alpha-video-kit/svg';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-const video = document.createElement('video');
+const video = document.getElementById('video') as HTMLVideoElement;
 video.src = '${SAMPLE_VIDEO_URL}';
 video.crossOrigin = 'anonymous';
-video.loop = true;
-video.muted = true;
-video.playsInline = true;
 
 let currentMode: SvgRendererMode = 'canvas';
 let renderer = createRenderer({ canvas, mode: currentMode });
-
-video.addEventListener('loadeddata', () => {
-  video.play();
-});
 
 function loop() {
   if (video.readyState >= 2) {
