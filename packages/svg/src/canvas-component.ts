@@ -1,3 +1,5 @@
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
 const VIDEO_ATTRS = [
   'src', 'crossorigin', 'preload', 'autoplay', 'loop',
   'muted', 'playsinline', 'poster', 'width', 'height',
@@ -13,18 +15,12 @@ const MEDIA_EVENTS = [
 ] as const;
 
 /**
- * `<alpha-video-kit-canvas>` — Canvas 2D wrapped in an SVG with an inline filter.
+ * `<alpha-video-kit-canvas>` — Canvas 2D with SVG filter via ctx.filter.
  *
- * Structure:
- *   <video hidden>                         ← source, not displayed
- *   <svg viewBox="0 0 W H/2">             ← clips to top half
- *     <filter>                             ← feOffset + feColorMatrix + feComposite
- *     <foreignObject W×H filter>           ← full-height canvas with filter applied
- *       <canvas>
- *
- * A hidden <video> feeds frames to <canvas> via drawImage (full stacked frame).
- * The SVG filter composites the stacked-alpha halves.
- * SVG viewBox clips to the top (color) half.
+ * A hidden <video> feeds frames to <canvas> via drawImage.
+ * The SVG filter (injected into document.body) composites stacked-alpha halves.
+ * ctx.filter = 'url(#id)' applies the filter during drawImage.
+ * A wrapper div clips the canvas to the top (color) half.
  */
 export class AlphaVideoKitCanvas extends HTMLElement {
   static observedAttributes = [...VIDEO_ATTRS];
@@ -32,16 +28,18 @@ export class AlphaVideoKitCanvas extends HTMLElement {
   #video!: HTMLVideoElement;
   #canvas!: HTMLCanvasElement;
   #ctx!: CanvasRenderingContext2D;
-  #svg!: SVGSVGElement;
-  #fo!: SVGForeignObjectElement;
-  #filter!: SVGFilterElement;
-  #feOffset!: SVGFEOffsetElement;
+  #clipDiv!: HTMLDivElement;
   #intersectionObs: IntersectionObserver | null = null;
   #childObs: MutationObserver | null = null;
   #isVisible = false;
   #rafId = 0;
   #vfcId = 0;
+
+  // SVG filter (lives in document.body so ctx.filter url() can resolve it)
   #filterId: string;
+  #filterSvg: SVGSVGElement | null = null;
+  #filter: SVGFilterElement | null = null;
+  #feOffset: SVGFEOffsetElement | null = null;
 
   constructor() {
     super();
@@ -51,28 +49,14 @@ export class AlphaVideoKitCanvas extends HTMLElement {
     shadow.innerHTML = `<style>
 :host{display:inline-block;overflow:hidden}
 video{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
-svg{display:block;width:100%;height:auto}
-canvas{display:block;width:100%;height:100%}
+.clip{overflow:hidden;width:100%}
+canvas{display:block;width:100%}
 </style>
 <video></video>
-<svg viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
-<defs>
-<filter id="${this.#filterId}" filterUnits="userSpaceOnUse" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
-<feOffset in="SourceGraphic" dy="0" result="s"/>
-<feColorMatrix in="s" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0" result="a"/>
-<feComposite in="SourceGraphic" in2="a" operator="in"/>
-</filter>
-</defs>
-<foreignObject width="1" height="1" filter="url(#${this.#filterId})">
-<canvas xmlns="http://www.w3.org/1999/xhtml"></canvas>
-</foreignObject>
-</svg>`;
+<div class="clip"><canvas></canvas></div>`;
 
     this.#video = shadow.querySelector('video')!;
-    this.#svg = shadow.querySelector('svg')!;
-    this.#fo = shadow.querySelector('foreignObject')!;
-    this.#filter = shadow.querySelector('filter')!;
-    this.#feOffset = shadow.querySelector('feOffset')!;
+    this.#clipDiv = shadow.querySelector('.clip')!;
     this.#canvas = shadow.querySelector('canvas')!;
     this.#ctx = this.#canvas.getContext('2d')!;
 
@@ -86,21 +70,72 @@ canvas{display:block;width:100%;height:100%}
     this.#video.addEventListener('resize', () => this.#updateDimensions());
   }
 
+  #ensureFilter() {
+    if (this.#filterSvg) return;
+
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('width', '0');
+    svg.setAttribute('height', '0');
+    svg.style.cssText = 'position:absolute;overflow:hidden';
+
+    const defs = document.createElementNS(SVG_NS, 'defs');
+
+    const filter = document.createElementNS(SVG_NS, 'filter');
+    filter.id = this.#filterId;
+    filter.setAttribute('filterUnits', 'userSpaceOnUse');
+    filter.setAttribute('x', '0');
+    filter.setAttribute('y', '0');
+    filter.setAttribute('width', '1');
+    filter.setAttribute('height', '1');
+    filter.setAttribute('color-interpolation-filters', 'sRGB');
+
+    const feOffset = document.createElementNS(SVG_NS, 'feOffset');
+    feOffset.setAttribute('in', 'SourceGraphic');
+    feOffset.setAttribute('dy', '0');
+    feOffset.setAttribute('result', 's');
+
+    const cm = document.createElementNS(SVG_NS, 'feColorMatrix');
+    cm.setAttribute('in', 's');
+    cm.setAttribute('type', 'matrix');
+    cm.setAttribute('values', '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0');
+    cm.setAttribute('result', 'a');
+
+    const comp = document.createElementNS(SVG_NS, 'feComposite');
+    comp.setAttribute('in', 'SourceGraphic');
+    comp.setAttribute('in2', 'a');
+    comp.setAttribute('operator', 'in');
+
+    filter.append(feOffset, cm, comp);
+    defs.appendChild(filter);
+    svg.appendChild(defs);
+    document.body.appendChild(svg);
+
+    this.#filterSvg = svg;
+    this.#filter = filter;
+    this.#feOffset = feOffset;
+  }
+
+  #removeFilter() {
+    this.#filterSvg?.remove();
+    this.#filterSvg = null;
+    this.#filter = null;
+    this.#feOffset = null;
+  }
+
   #updateDimensions() {
     const w = this.#video.videoWidth;
     const fullH = this.#video.videoHeight;
     if (!w || !fullH) return;
     const halfH = Math.floor(fullH / 2);
 
-    this.#svg.setAttribute('viewBox', `0 0 ${w} ${halfH}`);
-    this.#fo.setAttribute('width', String(w));
-    this.#fo.setAttribute('height', String(fullH));
-    this.#filter.setAttribute('width', String(w));
-    this.#filter.setAttribute('height', String(fullH));
-    this.#feOffset.setAttribute('dy', String(-halfH));
-
     this.#canvas.width = w;
     this.#canvas.height = fullH;
+    this.#clipDiv.style.aspectRatio = `${w} / ${halfH}`;
+
+    this.#ensureFilter();
+    this.#filter!.setAttribute('width', String(w));
+    this.#filter!.setAttribute('height', String(fullH));
+    this.#feOffset!.setAttribute('dy', String(-halfH));
   }
 
   connectedCallback() {
@@ -113,6 +148,8 @@ canvas{display:block;width:100%;height:100%}
 
     this.#childObs = new MutationObserver(() => this.#syncSourceChildren());
     this.#childObs.observe(this, { childList: true });
+
+    this.#ensureFilter();
 
     this.#intersectionObs = new IntersectionObserver(
       ([entry]) => {
@@ -134,6 +171,7 @@ canvas{display:block;width:100%;height:100%}
     this.#intersectionObs = null;
     this.#childObs?.disconnect();
     this.#childObs = null;
+    this.#removeFilter();
   }
 
   attributeChangedCallback(name: string, _old: string | null, value: string | null) {
@@ -199,6 +237,7 @@ canvas{display:block;width:100%;height:100%}
     if (this.#canvas.width !== w || this.#canvas.height !== h) {
       this.#updateDimensions();
     }
+    this.#ctx.filter = `url(#${this.#filterId})`;
     this.#ctx.drawImage(this.#video, 0, 0);
   }
 
