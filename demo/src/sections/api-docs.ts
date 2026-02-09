@@ -33,7 +33,30 @@ const SHARED_DEMO_STYLES = `
     }
     h1 { font-size: 24px; margin-bottom: 8px; }
     p { color: #8888a0; margin-bottom: 24px; }
-    .demo {
+    .panels {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+    }
+    .panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .panel-label {
+      font-size: 13px;
+      color: #8888a0;
+      margin-bottom: 8px;
+    }
+    .panel-label code { color: #a78bfa; }
+    .source {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #333;
+      background: var(--bg, #222);
+    }
+    .source video { display: block; width: 200px; }
+    .result {
       position: relative;
       background:
         repeating-conic-gradient(#2a2a3e 0% 25%, #1e1e30 0% 50%) 50% / 20px 20px;
@@ -41,7 +64,13 @@ const SHARED_DEMO_STYLES = `
       overflow: hidden;
       border: 1px solid #333;
     }
-    canvas { display: block; width: 400px; height: 400px; }`;
+    .result canvas { display: block; width: 200px; height: 200px; }
+    .arrow {
+      font-size: 28px;
+      color: #555;
+      align-self: center;
+      margin-top: 16px;
+    }`;
 
 const tabs: TabDef[] = [
   {
