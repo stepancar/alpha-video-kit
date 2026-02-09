@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "WebGL-based renderer for stacked alpha videos",
   "type": "module",
-  "files": ["dist"],
+  "files": ["dist", "react.d.ts"],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,6 +16,9 @@
     "./register": {
       "import": "./dist/register.js",
       "require": "./dist/register.cjs"
+    },
+    "./react": {
+      "types": "./react.d.ts"
     }
   },
   "scripts": {

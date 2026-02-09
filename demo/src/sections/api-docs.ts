@@ -14,8 +14,11 @@ interface TabDef {
     title: string;
     description: string;
     deps: Record<string, string>;
+    devDeps?: Record<string, string>;
     indexHtml: string;
-    mainTs: string;
+    mainFile?: string; // default: 'main.ts'
+    mainContent: string;
+    extraFiles?: Record<string, string>;
   };
 }
 
@@ -64,7 +67,7 @@ const SHARED_DEMO_STYLES = `
       overflow: hidden;
       border: 1px solid #333;
     }
-    .result canvas { display: block; width: 200px; height: 200px; }
+    .result > * { display: block; width: 200px; height: 200px; }
     .arrow {
       font-size: 28px;
       color: #555;
@@ -120,16 +123,21 @@ renderer.destroy();`,
   <script type="module" src="./main.ts"></script>
 </body>
 </html>`,
-      mainTs: `import '@alpha-video-kit/webgl/register';
+      mainContent: `// Register the custom element
+import '@alpha-video-kit/webgl/register';
+
+// Import the type for typed access (HTMLElementTagNameMap is also augmented)
+import type { AlphaVideoKitGL } from '@alpha-video-kit/webgl';
 
 const video = document.getElementById('video') as HTMLVideoElement;
-const player = document.getElementById('player') as HTMLElement;
+const player = document.getElementById('player') as AlphaVideoKitGL;
 
 video.src = '${SAMPLE_VIDEO_URL}';
 video.crossOrigin = 'anonymous';
 
-(player as any).src = '${SAMPLE_VIDEO_URL}';
-(player as any).crossOrigin = 'anonymous';
+// Fully typed — .src, .crossOrigin, .play(), etc.
+player.src = '${SAMPLE_VIDEO_URL}';
+player.crossOrigin = 'anonymous';
 `,
     },
   },
@@ -183,16 +191,21 @@ renderer.destroy();`,
   <script type="module" src="./main.ts"></script>
 </body>
 </html>`,
-      mainTs: `import '@alpha-video-kit/webgpu/register';
+      mainContent: `// Register the custom element
+import '@alpha-video-kit/webgpu/register';
+
+// Import the type for typed access
+import type { AlphaVideoKitGPU } from '@alpha-video-kit/webgpu';
 
 const video = document.getElementById('video') as HTMLVideoElement;
-const player = document.getElementById('player') as HTMLElement;
+const player = document.getElementById('player') as AlphaVideoKitGPU;
 
 video.src = '${SAMPLE_VIDEO_URL}';
 video.crossOrigin = 'anonymous';
 
-(player as any).src = '${SAMPLE_VIDEO_URL}';
-(player as any).crossOrigin = 'anonymous';
+// Fully typed — .src, .crossOrigin, .play(), etc.
+player.src = '${SAMPLE_VIDEO_URL}';
+player.crossOrigin = 'anonymous';
 `,
     },
   },
@@ -266,16 +279,21 @@ renderer.destroy();`,
   <script type="module" src="./main.ts"></script>
 </body>
 </html>`,
-      mainTs: `import '@alpha-video-kit/svg/register';
+      mainContent: `// Register the custom element
+import '@alpha-video-kit/svg/register';
+
+// Import the type for typed access
+import type { AlphaVideoKitSVG } from '@alpha-video-kit/svg';
 
 const video = document.getElementById('video') as HTMLVideoElement;
-const player = document.getElementById('player')!;
+const player = document.getElementById('player') as AlphaVideoKitSVG;
 
 video.src = '${SAMPLE_VIDEO_URL}';
 video.crossOrigin = 'anonymous';
 
-(player as any).src = '${SAMPLE_VIDEO_URL}';
-(player as any).crossOrigin = 'anonymous';
+// Fully typed — .src, .crossOrigin, .play(), etc.
+player.src = '${SAMPLE_VIDEO_URL}';
+player.crossOrigin = 'anonymous';
 
 // Mode switcher
 document.getElementById('btn-canvas')!.addEventListener('click', () => {
@@ -291,49 +309,217 @@ document.getElementById('btn-svg')!.addEventListener('click', () => {
 `,
     },
   },
+  {
+    label: 'React',
+    code: `<span class="comment">// Install</span>
+<span class="keyword">npm install</span> <span class="string">@alpha-video-kit/webgl @alpha-video-kit/webgpu @alpha-video-kit/svg</span>
+
+<span class="comment">// 1. Add JSX types — create alpha-video-kit.d.ts</span>
+<span class="comment">/// &lt;reference types="@alpha-video-kit/webgl/react" /&gt;</span>
+<span class="comment">/// &lt;reference types="@alpha-video-kit/webgpu/react" /&gt;</span>
+<span class="comment">/// &lt;reference types="@alpha-video-kit/svg/react" /&gt;</span>
+
+<span class="comment">// 2. Register elements &amp; use in JSX</span>
+<span class="keyword">import</span> <span class="string">'@alpha-video-kit/webgl/register'</span>;
+
+&lt;alpha-video-kit-gl
+  src=<span class="string">"video-stacked.mp4"</span>
+  autoPlay muted loop playsInline /&gt;`,
+    stackblitz: {
+      title: 'Alpha Video Kit — React',
+      description: 'Use alpha-video-kit custom elements in React with full JSX types',
+      deps: {
+        'react': '^19.0.0',
+        'react-dom': '^19.0.0',
+        '@alpha-video-kit/webgl': '^0.2.0',
+        '@alpha-video-kit/webgpu': '^0.2.0',
+        '@alpha-video-kit/svg': '^0.2.0',
+      },
+      devDeps: {
+        'vite': '^6.0.0',
+        'typescript': '^5.6.0',
+        '@vitejs/plugin-react': '^4.0.0',
+        '@types/react': '^19.0.0',
+        '@types/react-dom': '^19.0.0',
+      },
+      indexHtml: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alpha Video Kit — React Demo</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="./src/main.tsx"></script>
+</body>
+</html>`,
+      mainFile: 'src/App.tsx',
+      mainContent: `import { useRef } from 'react';
+
+// Register all custom elements
+import '@alpha-video-kit/webgl/register';
+import '@alpha-video-kit/webgpu/register';
+import '@alpha-video-kit/svg/register';
+
+// Types are provided by .d.ts triple-slash references
+// See src/alpha-video-kit.d.ts for how to set up JSX types
+import type { AlphaVideoKitGL } from '@alpha-video-kit/webgl';
+
+const VIDEO_URL = '${SAMPLE_VIDEO_URL}';
+
+const checkerBg = 'repeating-conic-gradient(#2a2a3e 0% 25%, #1e1e30 0% 50%) 50% / 20px 20px';
+
+export default function App() {
+  // refs are typed — try hovering glRef!
+  const glRef = useRef<AlphaVideoKitGL>(null);
+
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      fontFamily: 'system-ui, sans-serif', background: '#1a1a2e', color: '#e4e4ef',
+    }}>
+      <h1>React + Alpha Video Kit</h1>
+      <p style={{ color: '#8888a0' }}>
+        All three renderers as JSX elements with full type safety
+      </p>
+
+      <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Card title="WebGL" badge="GPU">
+          <alpha-video-kit-gl
+            ref={glRef}
+            src={VIDEO_URL}
+            crossOrigin="anonymous"
+            autoPlay muted loop playsInline
+            style={{ width: 240, height: 240, background: checkerBg, borderRadius: 12 }}
+          />
+        </Card>
+
+        <Card title="WebGPU" badge="GPU">
+          <alpha-video-kit-gpu
+            src={VIDEO_URL}
+            crossOrigin="anonymous"
+            autoPlay muted loop playsInline
+            style={{ width: 240, height: 240, background: checkerBg, borderRadius: 12 }}
+          />
+        </Card>
+
+        <Card title="SVG / Canvas 2D" badge="CPU">
+          <alpha-video-kit-svg
+            src={VIDEO_URL}
+            crossOrigin="anonymous"
+            autoPlay muted loop playsInline
+            mode="canvas"
+            style={{ width: 240, height: 240, background: checkerBg, borderRadius: 12 }}
+          />
+        </Card>
+      </div>
+
+      <p style={{ color: '#555', fontSize: 13, marginTop: 32 }}>
+        Check <code style={{ color: '#a78bfa' }}>src/alpha-video-kit.d.ts</code> to see how JSX types are enabled
+      </p>
+    </div>
+  );
+}
+
+function Card({ title, badge, children }: {
+  title: string; badge: string; children: React.ReactNode;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontWeight: 600 }}>{title}</span>
+        <span style={{
+          fontSize: 11, padding: '2px 8px', borderRadius: 4,
+          background: '#7c5cfc33', color: '#a78bfa',
+        }}>{badge}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+`,
+      extraFiles: {
+        'src/main.tsx': `import { createRoot } from 'react-dom/client';
+import App from './App';
+
+createRoot(document.getElementById('root')!).render(<App />);
+`,
+        'src/alpha-video-kit.d.ts': `// This file enables JSX types for alpha-video-kit custom elements.
+// Add triple-slash references to the packages you use:
+
+/// <reference types="@alpha-video-kit/webgl/react" />
+/// <reference types="@alpha-video-kit/webgpu/react" />
+/// <reference types="@alpha-video-kit/svg/react" />
+
+// That's it! Now you can use <alpha-video-kit-gl>, <alpha-video-kit-gpu>,
+// and <alpha-video-kit-svg> in JSX with full type checking and autocompletion.
+`,
+        'vite.config.ts': `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+});
+`,
+      },
+    },
+  },
 ];
 
 function openStackblitz(tab: TabDef) {
-  sdk.openProject(
-    {
-      title: tab.stackblitz.title,
-      description: tab.stackblitz.description,
-      template: 'node',
-      files: {
-        'index.html': tab.stackblitz.indexHtml,
-        'main.ts': tab.stackblitz.mainTs,
-        'package.json': JSON.stringify(
-          {
-            name: tab.stackblitz.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            private: true,
-            type: 'module',
-            scripts: { dev: 'vite', build: 'vite build' },
-            dependencies: tab.stackblitz.deps,
-            devDependencies: { vite: '^6.0.0', typescript: '^5.6.0' },
-          },
-          null,
-          2,
-        ),
-        'tsconfig.json': JSON.stringify(
-          {
-            compilerOptions: {
-              target: 'ES2023',
-              module: 'ESNext',
-              moduleResolution: 'bundler',
-              strict: true,
-              esModuleInterop: true,
-              skipLibCheck: true,
-              lib: ['ES2023', 'DOM'],
-            },
-            include: ['.'],
-          },
-          null,
-          2,
-        ),
-        'vite.config.ts': `import { defineConfig } from 'vite';\nexport default defineConfig({});`,
+  const sb = tab.stackblitz;
+  const mainFile = sb.mainFile || 'main.ts';
+  const devDeps = sb.devDeps || { vite: '^6.0.0', typescript: '^5.6.0' };
+
+  const files: Record<string, string> = {
+    'index.html': sb.indexHtml,
+    [mainFile]: sb.mainContent,
+    'package.json': JSON.stringify(
+      {
+        name: sb.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        private: true,
+        type: 'module',
+        scripts: { dev: 'vite', build: 'vite build' },
+        dependencies: sb.deps,
+        devDependencies: devDeps,
       },
-    },
-    { openFile: 'main.ts', newWindow: true },
+      null,
+      2,
+    ),
+    'tsconfig.json': JSON.stringify(
+      {
+        compilerOptions: {
+          target: 'ES2023',
+          module: 'ESNext',
+          moduleResolution: 'bundler',
+          strict: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          jsx: 'react-jsx',
+          lib: ['ES2023', 'DOM'],
+        },
+        include: ['src', '.'],
+      },
+      null,
+      2,
+    ),
+  };
+
+  // Add vite.config.ts only if not already in extraFiles
+  if (!sb.extraFiles?.['vite.config.ts']) {
+    files['vite.config.ts'] = `import { defineConfig } from 'vite';\nexport default defineConfig({});`;
+  }
+
+  // Merge extra files
+  if (sb.extraFiles) {
+    Object.assign(files, sb.extraFiles);
+  }
+
+  sdk.openProject(
+    { title: sb.title, description: sb.description, template: 'node', files },
+    { openFile: mainFile, newWindow: true },
   );
 }
 
