@@ -1,5 +1,5 @@
 {
-  "name": "@stacked-alpha-video/svg",
+  "name": "@alpha-video-kit/svg",
   "version": "0.1.0",
   "description": "SVG filter-based renderer for stacked alpha videos",
   "type": "module",

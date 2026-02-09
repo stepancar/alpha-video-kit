@@ -1,5 +1,5 @@
 {
-  "name": "@stacked-alpha-video/webgl",
+  "name": "@alpha-video-kit/webgl",
   "version": "0.1.0",
   "description": "WebGL-based renderer for stacked alpha videos",
   "type": "module",

@@ -10,9 +10,9 @@
     "@ffmpeg/ffmpeg": "^0.12.10",
     "@ffmpeg/util": "^0.12.1",
     "@stackblitz/sdk": "^1.11.0",
-    "@stacked-alpha-video/svg": "*",
-    "@stacked-alpha-video/webgl": "*",
-    "@stacked-alpha-video/webgpu": "*"
+    "@alpha-video-kit/svg": "*",
+    "@alpha-video-kit/webgl": "*",
+    "@alpha-video-kit/webgpu": "*"
   },
   "devDependencies": {
     "typescript": "^5.6.0",

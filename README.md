@@ -14,9 +14,9 @@ A shader (or pixel manipulation) samples both halves and composites the result w
 
 | Package | Renderer | Install |
 |---------|----------|---------|
-| `@stacked-alpha-video/webgl` | WebGL / WebGL2 | `npm i @stacked-alpha-video/webgl` |
-| `@stacked-alpha-video/webgpu` | WebGPU | `npm i @stacked-alpha-video/webgpu` |
-| `@stacked-alpha-video/svg` | SVG filter / Canvas 2D | `npm i @stacked-alpha-video/svg` |
+| `@alpha-video-kit/webgl` | WebGL / WebGL2 | `npm i @alpha-video-kit/webgl` |
+| `@alpha-video-kit/webgpu` | WebGPU | `npm i @alpha-video-kit/webgpu` |
+| `@alpha-video-kit/svg` | SVG filter / Canvas 2D | `npm i @alpha-video-kit/svg` |
 
 ## Quick Start
 
@@ -24,7 +24,7 @@ A shader (or pixel manipulation) samples both halves and composites the result w
 
 ```html
 <script type="module">
-  import '@stacked-alpha-video/webgl/register';
+  import '@alpha-video-kit/webgl/register';
 </script>
 
 <stacked-alpha-video-gl>
@@ -37,7 +37,7 @@ A shader (or pixel manipulation) samples both halves and composites the result w
 ### Low-level API
 
 ```typescript
-import { createRenderer } from '@stacked-alpha-video/webgl';
+import { createRenderer } from '@alpha-video-kit/webgl';
 
 const canvas = document.querySelector('canvas');
 const video = document.querySelector('video');

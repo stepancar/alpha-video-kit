@@ -1,5 +1,5 @@
-import { createRenderer as createWebGLRenderer } from '@stacked-alpha-video/webgl';
-import { createRenderer as createSVGRenderer } from '@stacked-alpha-video/svg';
+import { createRenderer as createWebGLRenderer } from '@alpha-video-kit/webgl';
+import { createRenderer as createSVGRenderer } from '@alpha-video-kit/svg';
 
 interface DemoCard {
   title: string;

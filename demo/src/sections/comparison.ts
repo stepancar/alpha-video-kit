@@ -18,9 +18,9 @@ export function createComparisonSection(): HTMLElement {
       <tbody>
         <tr>
           <td>Package</td>
-          <td><code>@stacked-alpha-video/webgl</code></td>
-          <td><code>@stacked-alpha-video/webgpu</code></td>
-          <td><code>@stacked-alpha-video/svg</code></td>
+          <td><code>@alpha-video-kit/webgl</code></td>
+          <td><code>@alpha-video-kit/webgpu</code></td>
+          <td><code>@alpha-video-kit/svg</code></td>
         </tr>
         <tr>
           <td>Browser Support</td>

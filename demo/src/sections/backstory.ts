@@ -46,7 +46,7 @@ export function createBackstorySection(): HTMLElement {
           This monorepo addresses those limitations with multiple rendering backends:
           WebGL (with visibility-based context management), WebGPU (no context limits),
           and SVG filters (pure CPU fallback). Each is published as an independent npm
-          package under <code>@stacked-alpha-video</code>. This demo also includes a
+          package under <code>@alpha-video-kit</code>. This demo also includes a
           video converter powered by ffmpeg.wasm so you can generate stacked-alpha
           videos right in the browser.
         </p>

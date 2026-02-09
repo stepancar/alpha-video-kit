@@ -3,6 +3,10 @@ import sdk from '@stackblitz/sdk';
 // A public stacked-alpha sample video URL for StackBlitz demos
 const SAMPLE_VIDEO_URL = 'https://stepancar.github.io/alpha-video-kit/sample-stacked.mp4';
 
+// ---------------------------------------------------------------------------
+// Tab definitions
+// ---------------------------------------------------------------------------
+
 interface TabDef {
   label: string;
   code: string;
@@ -15,38 +19,7 @@ interface TabDef {
   };
 }
 
-const tabs: TabDef[] = [
-  {
-    label: 'WebGL',
-    code: `<span class="comment">// Install</span>
-<span class="keyword">npm install</span> <span class="string">@stacked-alpha-video/webgl</span>
-
-<span class="comment">// Option 1: Web Component</span>
-<span class="keyword">import</span> <span class="string">'@stacked-alpha-video/webgl/register'</span>;
-
-&lt;stacked-alpha-video-gl&gt;
-  &lt;video autoplay muted loop playsinline&gt;
-    &lt;source src=<span class="string">"video-stacked.mp4"</span> type=<span class="string">"video/mp4"</span> /&gt;
-  &lt;/video&gt;
-&lt;/stacked-alpha-video-gl&gt;
-
-<span class="comment">// Option 2: Low-level API</span>
-<span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@stacked-alpha-video/webgl'</span>;
-
-<span class="keyword">const</span> renderer = createRenderer({ canvas });
-renderer.drawFrame(videoElement);
-renderer.destroy();`,
-    stackblitz: {
-      title: 'Stacked Alpha Video — WebGL',
-      description: 'Play transparent video on the web using WebGL renderer',
-      deps: { '@stacked-alpha-video/webgl': '^0.1.0' },
-      indexHtml: `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stacked Alpha Video — WebGL Demo</title>
-  <style>
+const SHARED_DEMO_STYLES = `
     body {
       margin: 0;
       min-height: 100vh;
@@ -68,19 +41,51 @@ renderer.destroy();`,
       overflow: hidden;
       border: 1px solid #333;
     }
-    canvas { display: block; width: 400px; height: 400px; }
-  </style>
+    canvas { display: block; width: 400px; height: 400px; }`;
+
+const tabs: TabDef[] = [
+  {
+    label: 'WebGL',
+    code: `<span class="comment">// Install</span>
+<span class="keyword">npm install</span> <span class="string">@alpha-video-kit/webgl</span>
+
+<span class="comment">// Option 1: Web Component</span>
+<span class="keyword">import</span> <span class="string">'@alpha-video-kit/webgl/register'</span>;
+
+&lt;stacked-alpha-video-gl&gt;
+  &lt;video autoplay muted loop playsinline&gt;
+    &lt;source src=<span class="string">"video-stacked.mp4"</span> type=<span class="string">"video/mp4"</span> /&gt;
+  &lt;/video&gt;
+&lt;/stacked-alpha-video-gl&gt;
+
+<span class="comment">// Option 2: Low-level API</span>
+<span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@alpha-video-kit/webgl'</span>;
+
+<span class="keyword">const</span> renderer = createRenderer({ canvas });
+renderer.drawFrame(videoElement);
+renderer.destroy();`,
+    stackblitz: {
+      title: 'Alpha Video Kit — WebGL',
+      description: 'Play transparent video on the web using @alpha-video-kit/webgl',
+      deps: { '@alpha-video-kit/webgl': '^0.1.0' },
+      indexHtml: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alpha Video Kit — WebGL Demo</title>
+  <style>${SHARED_DEMO_STYLES}</style>
 </head>
 <body>
   <h1>WebGL Renderer</h1>
-  <p>Transparent video rendered with @stacked-alpha-video/webgl</p>
+  <p>Transparent video rendered with <code>@alpha-video-kit/webgl</code></p>
   <div class="demo">
     <canvas id="canvas"></canvas>
   </div>
   <script type="module" src="./main.ts"></script>
 </body>
 </html>`,
-      mainTs: `import { createRenderer } from '@stacked-alpha-video/webgl';
+      mainTs: `import { createRenderer } from '@alpha-video-kit/webgl';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const video = document.createElement('video');
@@ -109,10 +114,10 @@ requestAnimationFrame(loop);
   {
     label: 'WebGPU',
     code: `<span class="comment">// Install</span>
-<span class="keyword">npm install</span> <span class="string">@stacked-alpha-video/webgpu</span>
+<span class="keyword">npm install</span> <span class="string">@alpha-video-kit/webgpu</span>
 
 <span class="comment">// Option 1: Web Component</span>
-<span class="keyword">import</span> <span class="string">'@stacked-alpha-video/webgpu/register'</span>;
+<span class="keyword">import</span> <span class="string">'@alpha-video-kit/webgpu/register'</span>;
 
 &lt;stacked-alpha-video-gpu&gt;
   &lt;video autoplay muted loop playsinline&gt;
@@ -121,50 +126,28 @@ requestAnimationFrame(loop);
 &lt;/stacked-alpha-video-gpu&gt;
 
 <span class="comment">// Option 2: Low-level API (async)</span>
-<span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@stacked-alpha-video/webgpu'</span>;
+<span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@alpha-video-kit/webgpu'</span>;
 
 <span class="keyword">const</span> renderer = <span class="keyword">await</span> createRenderer({ canvas });
 renderer.drawFrame(videoElement);
 renderer.destroy();`,
     stackblitz: {
-      title: 'Stacked Alpha Video — WebGPU',
-      description: 'Play transparent video on the web using WebGPU renderer',
-      deps: { '@stacked-alpha-video/webgpu': '^0.1.0' },
+      title: 'Alpha Video Kit — WebGPU',
+      description: 'Play transparent video on the web using @alpha-video-kit/webgpu',
+      deps: { '@alpha-video-kit/webgpu': '^0.1.0' },
       indexHtml: `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stacked Alpha Video — WebGPU Demo</title>
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-family: system-ui, sans-serif;
-      background: #1a1a2e;
-      color: #e4e4ef;
-    }
-    h1 { font-size: 24px; margin-bottom: 8px; }
-    p { color: #8888a0; margin-bottom: 24px; }
-    .demo {
-      position: relative;
-      background:
-        repeating-conic-gradient(#2a2a3e 0% 25%, #1e1e30 0% 50%) 50% / 20px 20px;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid #333;
-    }
-    canvas { display: block; width: 400px; height: 400px; }
+  <title>Alpha Video Kit — WebGPU Demo</title>
+  <style>${SHARED_DEMO_STYLES}
     .error { color: #fb923c; margin-top: 16px; }
   </style>
 </head>
 <body>
   <h1>WebGPU Renderer</h1>
-  <p>Transparent video rendered with @stacked-alpha-video/webgpu</p>
+  <p>Transparent video rendered with <code>@alpha-video-kit/webgpu</code></p>
   <div class="demo">
     <canvas id="canvas"></canvas>
   </div>
@@ -172,7 +155,7 @@ renderer.destroy();`,
   <script type="module" src="./main.ts"></script>
 </body>
 </html>`,
-      mainTs: `import { createRenderer } from '@stacked-alpha-video/webgpu';
+      mainTs: `import { createRenderer } from '@alpha-video-kit/webgpu';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const errorEl = document.getElementById('error')!;
@@ -210,10 +193,10 @@ init();
   {
     label: 'SVG',
     code: `<span class="comment">// Install</span>
-<span class="keyword">npm install</span> <span class="string">@stacked-alpha-video/svg</span>
+<span class="keyword">npm install</span> <span class="string">@alpha-video-kit/svg</span>
 
 <span class="comment">// Option 1: Web Component</span>
-<span class="keyword">import</span> <span class="string">'@stacked-alpha-video/svg/register'</span>;
+<span class="keyword">import</span> <span class="string">'@alpha-video-kit/svg/register'</span>;
 
 &lt;stacked-alpha-video-svg&gt;
   &lt;video autoplay muted loop playsinline&gt;
@@ -222,45 +205,23 @@ init();
 &lt;/stacked-alpha-video-svg&gt;
 
 <span class="comment">// Option 2: Low-level API with mode selection</span>
-<span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@stacked-alpha-video/svg'</span>;
+<span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@alpha-video-kit/svg'</span>;
 
 <span class="comment">// 'canvas' (default) or 'svg-filter'</span>
 <span class="keyword">const</span> renderer = createRenderer({ canvas, mode: <span class="string">'svg-filter'</span> });
 renderer.drawFrame(videoElement);
 renderer.destroy();`,
     stackblitz: {
-      title: 'Stacked Alpha Video — SVG Filter',
-      description: 'Play transparent video on the web using SVG filter / Canvas 2D renderer',
-      deps: { '@stacked-alpha-video/svg': '^0.1.0' },
+      title: 'Alpha Video Kit — SVG Filter',
+      description: 'Play transparent video on the web using @alpha-video-kit/svg',
+      deps: { '@alpha-video-kit/svg': '^0.1.0' },
       indexHtml: `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stacked Alpha Video — SVG Filter Demo</title>
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-family: system-ui, sans-serif;
-      background: #1a1a2e;
-      color: #e4e4ef;
-    }
-    h1 { font-size: 24px; margin-bottom: 8px; }
-    p { color: #8888a0; margin-bottom: 24px; }
-    .demo {
-      position: relative;
-      background:
-        repeating-conic-gradient(#2a2a3e 0% 25%, #1e1e30 0% 50%) 50% / 20px 20px;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid #333;
-    }
-    canvas { display: block; width: 400px; height: 400px; }
+  <title>Alpha Video Kit — SVG Filter Demo</title>
+  <style>${SHARED_DEMO_STYLES}
     .controls {
       margin-top: 16px;
       display: flex;
@@ -282,7 +243,7 @@ renderer.destroy();`,
 </head>
 <body>
   <h1>SVG / Canvas 2D Renderer</h1>
-  <p>Transparent video rendered with @stacked-alpha-video/svg</p>
+  <p>Transparent video rendered with <code>@alpha-video-kit/svg</code></p>
   <div class="demo">
     <canvas id="canvas"></canvas>
   </div>
@@ -293,8 +254,8 @@ renderer.destroy();`,
   <script type="module" src="./main.ts"></script>
 </body>
 </html>`,
-      mainTs: `import { createRenderer } from '@stacked-alpha-video/svg';
-import type { SvgRendererMode } from '@stacked-alpha-video/svg';
+      mainTs: `import { createRenderer } from '@alpha-video-kit/svg';
+import type { SvgRendererMode } from '@alpha-video-kit/svg';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const video = document.createElement('video');

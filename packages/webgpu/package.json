@@ -1,5 +1,5 @@
 {
-  "name": "@stacked-alpha-video/webgpu",
+  "name": "@alpha-video-kit/webgpu",
   "version": "0.1.0",
   "description": "WebGPU-based renderer for stacked alpha videos",
   "type": "module",
