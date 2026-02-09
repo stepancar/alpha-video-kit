@@ -1,5 +1,3 @@
-import { ensureSvgFilter, FILTER_ID } from './ensure-filter.js';
-
 const VIDEO_ATTRS = [
   'src', 'crossorigin', 'preload', 'autoplay', 'loop',
   'muted', 'playsinline', 'poster', 'width', 'height',
@@ -15,11 +13,18 @@ const MEDIA_EVENTS = [
 ] as const;
 
 /**
- * `<alpha-video-kit-canvas>` — Canvas 2D with the same SVG filter applied via CSS.
+ * `<alpha-video-kit-canvas>` — Canvas 2D wrapped in an SVG with an inline filter.
  *
- * A hidden <video> feeds a visible <canvas> via drawImage (full stacked frame).
- * The CSS SVG filter composites the stacked-alpha halves.
- * The host element clips to the top half via overflow:hidden + aspect-ratio.
+ * Structure:
+ *   <video hidden>                         ← source, not displayed
+ *   <svg viewBox="0 0 W H/2">             ← clips to top half
+ *     <filter>                             ← feOffset + feColorMatrix + feComposite
+ *     <foreignObject W×H filter>           ← full-height canvas with filter applied
+ *       <canvas>
+ *
+ * A hidden <video> feeds frames to <canvas> via drawImage (full stacked frame).
+ * The SVG filter composites the stacked-alpha halves.
+ * SVG viewBox clips to the top (color) half.
  */
 export class AlphaVideoKitCanvas extends HTMLElement {
   static observedAttributes = [...VIDEO_ATTRS];
@@ -27,21 +32,47 @@ export class AlphaVideoKitCanvas extends HTMLElement {
   #video!: HTMLVideoElement;
   #canvas!: HTMLCanvasElement;
   #ctx!: CanvasRenderingContext2D;
+  #svg!: SVGSVGElement;
+  #fo!: SVGForeignObjectElement;
+  #filter!: SVGFilterElement;
+  #feOffset!: SVGFEOffsetElement;
   #intersectionObs: IntersectionObserver | null = null;
   #childObs: MutationObserver | null = null;
   #isVisible = false;
   #rafId = 0;
   #vfcId = 0;
+  #filterId: string;
 
   constructor() {
     super();
     const shadow = this.attachShadow({ mode: 'open' });
+    this.#filterId = `avk-c-${Math.random().toString(36).slice(2, 8)}`;
+
     shadow.innerHTML = `<style>
 :host{display:inline-block;overflow:hidden}
 video{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
-canvas{display:block;width:100%;filter:url(#${FILTER_ID})}
-</style><video></video><canvas></canvas>`;
+svg{display:block;width:100%;height:auto}
+canvas{display:block;width:100%;height:100%}
+</style>
+<video></video>
+<svg viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
+<defs>
+<filter id="${this.#filterId}" filterUnits="userSpaceOnUse" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+<feOffset in="SourceGraphic" dy="0" result="s"/>
+<feColorMatrix in="s" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0" result="a"/>
+<feComposite in="SourceGraphic" in2="a" operator="in"/>
+</filter>
+</defs>
+<foreignObject width="1" height="1" filter="url(#${this.#filterId})">
+<canvas xmlns="http://www.w3.org/1999/xhtml"></canvas>
+</foreignObject>
+</svg>`;
+
     this.#video = shadow.querySelector('video')!;
+    this.#svg = shadow.querySelector('svg')!;
+    this.#fo = shadow.querySelector('foreignObject')!;
+    this.#filter = shadow.querySelector('filter')!;
+    this.#feOffset = shadow.querySelector('feOffset')!;
     this.#canvas = shadow.querySelector('canvas')!;
     this.#ctx = this.#canvas.getContext('2d')!;
 
@@ -51,14 +82,28 @@ canvas{display:block;width:100%;filter:url(#${FILTER_ID})}
       });
     }
 
-    this.#video.addEventListener('loadedmetadata', () => {
-      this.style.aspectRatio = `${this.#video.videoWidth} / ${Math.floor(this.#video.videoHeight / 2)}`;
-    });
+    this.#video.addEventListener('loadedmetadata', () => this.#updateDimensions());
+    this.#video.addEventListener('resize', () => this.#updateDimensions());
+  }
+
+  #updateDimensions() {
+    const w = this.#video.videoWidth;
+    const fullH = this.#video.videoHeight;
+    if (!w || !fullH) return;
+    const halfH = Math.floor(fullH / 2);
+
+    this.#svg.setAttribute('viewBox', `0 0 ${w} ${halfH}`);
+    this.#fo.setAttribute('width', String(w));
+    this.#fo.setAttribute('height', String(fullH));
+    this.#filter.setAttribute('width', String(w));
+    this.#filter.setAttribute('height', String(fullH));
+    this.#feOffset.setAttribute('dy', String(-halfH));
+
+    this.#canvas.width = w;
+    this.#canvas.height = fullH;
   }
 
   connectedCallback() {
-    ensureSvgFilter();
-
     for (const attr of VIDEO_ATTRS) {
       if (this.hasAttribute(attr)) {
         this.#mirrorAttr(attr, this.getAttribute(attr));
@@ -149,10 +194,10 @@ canvas{display:block;width:100%;filter:url(#${FILTER_ID})}
   #renderFrame() {
     if (this.#video.readyState < 2) return;
     const w = this.#video.videoWidth;
-    const h = this.#video.videoHeight; // full height — filter needs both halves
+    const h = this.#video.videoHeight;
+    if (!w || !h) return;
     if (this.#canvas.width !== w || this.#canvas.height !== h) {
-      this.#canvas.width = w;
-      this.#canvas.height = h;
+      this.#updateDimensions();
     }
     this.#ctx.drawImage(this.#video, 0, 0);
   }
