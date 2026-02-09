@@ -1,10 +1,8 @@
-import { createRenderer } from './renderer.js';
-import type { StackedAlphaRenderer } from './types.js';
-import type { SvgRendererMode } from './renderer.js';
+import { ensureSvgFilter, FILTER_ID } from './ensure-filter.js';
 
 const VIDEO_ATTRS = [
   'src', 'crossorigin', 'preload', 'autoplay', 'loop',
-  'muted', 'playsinline', 'poster', 'width', 'height', 'mode',
+  'muted', 'playsinline', 'poster', 'width', 'height',
 ] as const;
 
 const BOOLEAN_ATTRS = new Set(['autoplay', 'loop', 'muted', 'playsinline']);
@@ -16,12 +14,19 @@ const MEDIA_EVENTS = [
   'timeupdate', 'play', 'pause', 'ratechange', 'resize', 'volumechange',
 ] as const;
 
-export class AlphaVideoKitSVG extends HTMLElement {
+/**
+ * `<alpha-video-kit-canvas>` — Canvas 2D with the same SVG filter applied via CSS.
+ *
+ * A hidden <video> feeds a visible <canvas> via drawImage (full stacked frame).
+ * The CSS SVG filter composites the stacked-alpha halves.
+ * The host element clips to the top half via overflow:hidden + aspect-ratio.
+ */
+export class AlphaVideoKitCanvas extends HTMLElement {
   static observedAttributes = [...VIDEO_ATTRS];
 
   #video!: HTMLVideoElement;
   #canvas!: HTMLCanvasElement;
-  #renderer: StackedAlphaRenderer | null = null;
+  #ctx!: CanvasRenderingContext2D;
   #intersectionObs: IntersectionObserver | null = null;
   #childObs: MutationObserver | null = null;
   #isVisible = false;
@@ -34,21 +39,27 @@ export class AlphaVideoKitSVG extends HTMLElement {
     shadow.innerHTML = `<style>
 :host{display:inline-block;overflow:hidden}
 video{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
-canvas{display:block;width:100%;height:100%}
+canvas{display:block;width:100%;filter:url(#${FILTER_ID})}
 </style><video></video><canvas></canvas>`;
     this.#video = shadow.querySelector('video')!;
     this.#canvas = shadow.querySelector('canvas')!;
+    this.#ctx = this.#canvas.getContext('2d')!;
 
     for (const evt of MEDIA_EVENTS) {
       this.#video.addEventListener(evt, (e) => {
         this.dispatchEvent(new Event(e.type, { bubbles: false, cancelable: false }));
       });
     }
+
+    this.#video.addEventListener('loadedmetadata', () => {
+      this.style.aspectRatio = `${this.#video.videoWidth} / ${Math.floor(this.#video.videoHeight / 2)}`;
+    });
   }
 
   connectedCallback() {
+    ensureSvgFilter();
+
     for (const attr of VIDEO_ATTRS) {
-      if (attr === 'mode') continue;
       if (this.hasAttribute(attr)) {
         this.#mirrorAttr(attr, this.getAttribute(attr));
       }
@@ -62,7 +73,6 @@ canvas{display:block;width:100%;height:100%}
       ([entry]) => {
         this.#isVisible = entry.isIntersecting;
         if (this.#isVisible) {
-          this.#ensureRenderer();
           this.#startLoop();
         } else {
           this.#stopLoop();
@@ -79,21 +89,9 @@ canvas{display:block;width:100%;height:100%}
     this.#intersectionObs = null;
     this.#childObs?.disconnect();
     this.#childObs = null;
-    this.#renderer?.destroy();
-    this.#renderer = null;
   }
 
   attributeChangedCallback(name: string, _old: string | null, value: string | null) {
-    if (name === 'mode') {
-      // Recreate renderer with new mode
-      this.#renderer?.destroy();
-      this.#renderer = null;
-      if (this.#isVisible) {
-        this.#ensureRenderer();
-        this.#startLoop();
-      }
-      return;
-    }
     this.#mirrorAttr(name, value);
   }
 
@@ -117,27 +115,19 @@ canvas{display:block;width:100%;height:100%}
     }
   }
 
-  #ensureRenderer() {
-    if (this.#renderer && !this.#renderer.isDestroyed) return;
-    try {
-      const mode = (this.getAttribute('mode') as SvgRendererMode) || 'canvas';
-      this.#renderer = createRenderer({ canvas: this.#canvas, mode });
-    } catch { /* fallback not available */ }
-  }
-
   #startLoop() {
-    if (!this.#isVisible || !this.#renderer) return;
+    if (!this.#isVisible) return;
     this.#stopLoop();
     if ('requestVideoFrameCallback' in this.#video) {
       const tick = () => {
-        if (!this.#isVisible || !this.#renderer) return;
+        if (!this.#isVisible) return;
         this.#renderFrame();
         this.#vfcId = (this.#video as any).requestVideoFrameCallback(tick);
       };
       this.#vfcId = (this.#video as any).requestVideoFrameCallback(tick);
     } else {
       const tick = () => {
-        if (!this.#isVisible || !this.#renderer) return;
+        if (!this.#isVisible) return;
         this.#renderFrame();
         this.#rafId = requestAnimationFrame(tick);
       };
@@ -157,8 +147,14 @@ canvas{display:block;width:100%;height:100%}
   }
 
   #renderFrame() {
-    if (this.#video.readyState < 2 || !this.#renderer) return;
-    this.#renderer.drawFrame(this.#video);
+    if (this.#video.readyState < 2) return;
+    const w = this.#video.videoWidth;
+    const h = this.#video.videoHeight; // full height — filter needs both halves
+    if (this.#canvas.width !== w || this.#canvas.height !== h) {
+      this.#canvas.width = w;
+      this.#canvas.height = h;
+    }
+    this.#ctx.drawImage(this.#video, 0, 0);
   }
 
   // --- Proxied properties ---

@@ -214,20 +214,16 @@ player.crossOrigin = 'anonymous';
     code: `<span class="comment">// Install</span>
 <span class="keyword">npm install</span> <span class="string">@alpha-video-kit/svg</span>
 
-<span class="comment">// Option 1: Web Component (HTMLVideoElement-like API)</span>
+<span class="comment">// Two components — same SVG filter, different targets</span>
 <span class="keyword">import</span> <span class="string">'@alpha-video-kit/svg/register'</span>;
 
+<span class="comment">// SVG filter on &lt;video&gt; (no canvas, no render loop)</span>
 &lt;alpha-video-kit-svg src=<span class="string">"video-stacked.mp4"</span>
-  autoplay muted loop playsinline mode=<span class="string">"canvas"</span>&gt;
-&lt;/alpha-video-kit-svg&gt;
+  autoplay muted loop playsinline /&gt;
 
-<span class="comment">// Option 2: Low-level API with mode selection</span>
-<span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@alpha-video-kit/svg'</span>;
-
-<span class="comment">// 'canvas' (default) or 'svg-filter'</span>
-<span class="keyword">const</span> renderer = createRenderer({ canvas, mode: <span class="string">'svg-filter'</span> });
-renderer.drawFrame(videoElement);
-renderer.destroy();`,
+<span class="comment">// SVG filter on &lt;canvas&gt; (drawImage + CSS filter)</span>
+&lt;alpha-video-kit-canvas src=<span class="string">"video-stacked.mp4"</span>
+  autoplay muted loop playsinline /&gt;`,
     stackblitz: {
       title: 'Alpha Video Kit — SVG Filter',
       description: 'Play transparent video on the web using @alpha-video-kit/svg',
@@ -239,73 +235,50 @@ renderer.destroy();`,
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alpha Video Kit — SVG Filter Demo</title>
   <style>${SHARED_DEMO_STYLES}
-    .controls {
-      margin-top: 16px;
-      display: flex;
-      gap: 8px;
-    }
-    button {
-      padding: 6px 16px;
-      border-radius: 6px;
-      border: 1px solid #444;
-      background: #2a2a3e;
-      color: #e4e4ef;
-      cursor: pointer;
-    }
-    button.active {
-      background: #7c5cfc;
-      border-color: #7c5cfc;
-    }
+    .result > * { width: 200px; }
   </style>
 </head>
 <body>
-  <h1>SVG / Canvas 2D Renderer</h1>
-  <p>Transparent video rendered with <code>&lt;alpha-video-kit-svg&gt;</code></p>
+  <h1>SVG Filter Renderers</h1>
+  <p>Two components from <code>@alpha-video-kit/svg</code></p>
   <div class="panels">
     <div class="panel">
-      <div class="panel-label">Source <code>(stacked double-height)</code></div>
+      <div class="panel-label">Source <code>(stacked)</code></div>
       <div class="source"><video id="video" autoplay muted loop playsinline></video></div>
     </div>
     <div class="arrow">&rarr;</div>
     <div class="panel">
-      <div class="panel-label">Result <code>(transparent)</code></div>
-      <div class="result"><alpha-video-kit-svg id="player" autoplay muted loop playsinline mode="canvas"></alpha-video-kit-svg></div>
+      <div class="panel-label"><code>&lt;alpha-video-kit-svg&gt;</code></div>
+      <div class="result"><alpha-video-kit-svg id="player-svg" autoplay muted loop playsinline></alpha-video-kit-svg></div>
     </div>
-  </div>
-  <div class="controls">
-    <button id="btn-canvas" class="active">Canvas 2D mode</button>
-    <button id="btn-svg">SVG Filter mode</button>
+    <div class="arrow">&rarr;</div>
+    <div class="panel">
+      <div class="panel-label"><code>&lt;alpha-video-kit-canvas&gt;</code></div>
+      <div class="result"><alpha-video-kit-canvas id="player-canvas" autoplay muted loop playsinline></alpha-video-kit-canvas></div>
+    </div>
   </div>
   <script type="module" src="./main.ts"></script>
 </body>
 </html>`,
-      mainContent: `// Register the custom element
+      mainContent: `// Register both custom elements
 import '@alpha-video-kit/svg/register';
 
-// Import the type for typed access
-import type { AlphaVideoKitSVG } from '@alpha-video-kit/svg';
+// Import types for typed access
+import type { AlphaVideoKitSVG, AlphaVideoKitCanvas } from '@alpha-video-kit/svg';
 
 const video = document.getElementById('video') as HTMLVideoElement;
-const player = document.getElementById('player') as AlphaVideoKitSVG;
+const svgPlayer = document.getElementById('player-svg') as AlphaVideoKitSVG;
+const canvasPlayer = document.getElementById('player-canvas') as AlphaVideoKitCanvas;
 
 video.src = '${SAMPLE_VIDEO_URL}';
 video.crossOrigin = 'anonymous';
 
-// Fully typed — .src, .crossOrigin, .play(), etc.
-player.src = '${SAMPLE_VIDEO_URL}';
-player.crossOrigin = 'anonymous';
+// Both components have the same HTMLVideoElement-like API
+svgPlayer.src = '${SAMPLE_VIDEO_URL}';
+svgPlayer.crossOrigin = 'anonymous';
 
-// Mode switcher
-document.getElementById('btn-canvas')!.addEventListener('click', () => {
-  player.setAttribute('mode', 'canvas');
-  document.getElementById('btn-canvas')!.classList.add('active');
-  document.getElementById('btn-svg')!.classList.remove('active');
-});
-document.getElementById('btn-svg')!.addEventListener('click', () => {
-  player.setAttribute('mode', 'svg-filter');
-  document.getElementById('btn-svg')!.classList.add('active');
-  document.getElementById('btn-canvas')!.classList.remove('active');
-});
+canvasPlayer.src = '${SAMPLE_VIDEO_URL}';
+canvasPlayer.crossOrigin = 'anonymous';
 `,
     },
   },
@@ -405,13 +378,21 @@ export default function App() {
           />
         </Card>
 
-        <Card title="SVG / Canvas 2D" badge="CPU">
+        <Card title="SVG Filter" badge="CPU">
           <alpha-video-kit-svg
             src={VIDEO_URL}
             crossOrigin="anonymous"
             autoPlay muted loop playsInline
-            mode="canvas"
-            style={{ width: 240, height: 240, background: checkerBg, borderRadius: 12 }}
+            style={{ width: 240, background: checkerBg, borderRadius: 12 }}
+          />
+        </Card>
+
+        <Card title="Canvas 2D" badge="CPU">
+          <alpha-video-kit-canvas
+            src={VIDEO_URL}
+            crossOrigin="anonymous"
+            autoPlay muted loop playsInline
+            style={{ width: 240, background: checkerBg, borderRadius: 12 }}
           />
         </Card>
       </div>
