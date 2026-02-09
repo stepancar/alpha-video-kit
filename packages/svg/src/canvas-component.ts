@@ -1,4 +1,4 @@
-const SVG_NS = 'http://www.w3.org/2000/svg';
+import { acquire, release, processFrame, type SharedGLContext } from './shared-webgl.js';
 
 const VIDEO_ATTRS = [
   'src', 'crossorigin', 'preload', 'autoplay', 'loop',
@@ -15,12 +15,12 @@ const MEDIA_EVENTS = [
 ] as const;
 
 /**
- * `<alpha-video-kit-canvas>` — Canvas 2D with SVG filter via ctx.filter.
+ * `<alpha-video-kit-canvas>` — Canvas 2D output powered by a shared WebGL processor.
  *
- * A hidden <video> feeds frames to <canvas> via drawImage.
- * The SVG filter (injected into document.body) composites stacked-alpha halves.
- * ctx.filter = 'url(#id)' applies the filter during drawImage.
- * A wrapper div clips the canvas to the top (color) half.
+ * A hidden <video> feeds frames through a shared WebGL canvas (singleton)
+ * that composites stacked-alpha halves via a shader, then copies the result
+ * to the visible <canvas> via drawImage. This avoids the 16 WebGL context
+ * limit and works in Safari.
  */
 export class AlphaVideoKitCanvas extends HTMLElement {
   static observedAttributes = [...VIDEO_ATTRS];
@@ -28,24 +28,17 @@ export class AlphaVideoKitCanvas extends HTMLElement {
   #video!: HTMLVideoElement;
   #canvas!: HTMLCanvasElement;
   #ctx!: CanvasRenderingContext2D;
-  #offscreen!: HTMLCanvasElement;
-  #offCtx!: CanvasRenderingContext2D;
   #intersectionObs: IntersectionObserver | null = null;
   #childObs: MutationObserver | null = null;
   #isVisible = false;
   #rafId = 0;
   #vfcId = 0;
 
-  // SVG filter (lives in document.body so ctx.filter url() can resolve it)
-  #filterId: string;
-  #filterSvg: SVGSVGElement | null = null;
-  #filter: SVGFilterElement | null = null;
-  #feOffset: SVGFEOffsetElement | null = null;
+  #glCtx: SharedGLContext | null = null;
 
   constructor() {
     super();
     const shadow = this.attachShadow({ mode: 'open' });
-    this.#filterId = `avk-c-${Math.random().toString(36).slice(2, 8)}`;
 
     shadow.innerHTML = `<style>
 :host{display:inline-block;overflow:hidden}
@@ -58,8 +51,6 @@ canvas{display:block;width:100%}
     this.#video = shadow.querySelector('video')!;
     this.#canvas = shadow.querySelector('canvas')!;
     this.#ctx = this.#canvas.getContext('2d')!;
-    this.#offscreen = document.createElement('canvas');
-    this.#offCtx = this.#offscreen.getContext('2d')!;
 
     for (const evt of MEDIA_EVENTS) {
       this.#video.addEventListener(evt, (e) => {
@@ -71,58 +62,6 @@ canvas{display:block;width:100%}
     this.#video.addEventListener('resize', () => this.#updateDimensions());
   }
 
-  #ensureFilter() {
-    if (this.#filterSvg) return;
-
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('width', '0');
-    svg.setAttribute('height', '0');
-    svg.style.cssText = 'position:absolute;overflow:hidden';
-
-    const defs = document.createElementNS(SVG_NS, 'defs');
-
-    const filter = document.createElementNS(SVG_NS, 'filter');
-    filter.id = this.#filterId;
-    filter.setAttribute('filterUnits', 'userSpaceOnUse');
-    filter.setAttribute('x', '0');
-    filter.setAttribute('y', '0');
-    filter.setAttribute('width', '1');
-    filter.setAttribute('height', '1');
-    filter.setAttribute('color-interpolation-filters', 'sRGB');
-
-    const feOffset = document.createElementNS(SVG_NS, 'feOffset');
-    feOffset.setAttribute('in', 'SourceGraphic');
-    feOffset.setAttribute('dy', '0');
-    feOffset.setAttribute('result', 's');
-
-    const cm = document.createElementNS(SVG_NS, 'feColorMatrix');
-    cm.setAttribute('in', 's');
-    cm.setAttribute('type', 'matrix');
-    cm.setAttribute('values', '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0');
-    cm.setAttribute('result', 'a');
-
-    const comp = document.createElementNS(SVG_NS, 'feComposite');
-    comp.setAttribute('in', 'SourceGraphic');
-    comp.setAttribute('in2', 'a');
-    comp.setAttribute('operator', 'in');
-
-    filter.append(feOffset, cm, comp);
-    defs.appendChild(filter);
-    svg.appendChild(defs);
-    document.body.appendChild(svg);
-
-    this.#filterSvg = svg;
-    this.#filter = filter;
-    this.#feOffset = feOffset;
-  }
-
-  #removeFilter() {
-    this.#filterSvg?.remove();
-    this.#filterSvg = null;
-    this.#filter = null;
-    this.#feOffset = null;
-  }
-
   #updateDimensions() {
     const w = this.#video.videoWidth;
     const fullH = this.#video.videoHeight;
@@ -131,13 +70,6 @@ canvas{display:block;width:100%}
 
     this.#canvas.width = w;
     this.#canvas.height = halfH;
-    this.#offscreen.width = w;
-    this.#offscreen.height = fullH;
-
-    this.#ensureFilter();
-    this.#filter!.setAttribute('width', String(w));
-    this.#filter!.setAttribute('height', String(fullH));
-    this.#feOffset!.setAttribute('dy', String(-halfH));
   }
 
   connectedCallback() {
@@ -151,7 +83,7 @@ canvas{display:block;width:100%}
     this.#childObs = new MutationObserver(() => this.#syncSourceChildren());
     this.#childObs.observe(this, { childList: true });
 
-    this.#ensureFilter();
+    this.#glCtx = acquire();
 
     this.#intersectionObs = new IntersectionObserver(
       ([entry]) => {
@@ -173,7 +105,10 @@ canvas{display:block;width:100%}
     this.#intersectionObs = null;
     this.#childObs?.disconnect();
     this.#childObs = null;
-    this.#removeFilter();
+    if (this.#glCtx) {
+      release(this.#glCtx);
+      this.#glCtx = null;
+    }
   }
 
   attributeChangedCallback(name: string, _old: string | null, value: string | null) {
@@ -232,21 +167,12 @@ canvas{display:block;width:100%}
   }
 
   #renderFrame() {
-    if (this.#video.readyState < 2) return;
+    if (this.#video.readyState < 2 || !this.#glCtx) return;
     const w = this.#video.videoWidth;
     const fullH = this.#video.videoHeight;
     if (!w || !fullH) return;
-    const halfH = Math.floor(fullH / 2);
-    if (this.#offscreen.width !== w || this.#offscreen.height !== fullH) {
-      this.#updateDimensions();
-    }
-    // Draw full video with filter on offscreen (full height)
-    this.#offCtx.clearRect(0, 0, w, fullH);
-    this.#offCtx.filter = `url(#${this.#filterId})`;
-    this.#offCtx.drawImage(this.#video, 0, 0);
-    // Copy top half to visible canvas
-    this.#ctx.clearRect(0, 0, w, halfH);
-    this.#ctx.drawImage(this.#offscreen, 0, 0, w, halfH, 0, 0, w, halfH);
+
+    processFrame(this.#glCtx, this.#video, this.#canvas, this.#ctx);
   }
 
   // --- Proxied properties ---
