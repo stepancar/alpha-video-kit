@@ -13,7 +13,7 @@ interface AlphaVideoKitGLAttributes extends React.HTMLAttributes<AlphaVideoKitGL
   height?: number | string;
 }
 
-declare global {
+declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
       'alpha-video-kit-gl': AlphaVideoKitGLAttributes;

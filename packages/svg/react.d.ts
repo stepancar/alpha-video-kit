@@ -27,7 +27,7 @@ interface AlphaVideoKitCanvasAttributes extends React.HTMLAttributes<AlphaVideoK
   height?: number | string;
 }
 
-declare global {
+declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
       'alpha-video-kit-svg': AlphaVideoKitSVGAttributes;

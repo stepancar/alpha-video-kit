@@ -1,18 +1,12 @@
-import { useRef } from 'react';
-
 import '@alpha-video-kit/webgl/register';
 import '@alpha-video-kit/webgpu/register';
 import '@alpha-video-kit/svg/register';
-
-import type { AlphaVideoKitGL } from '@alpha-video-kit/webgl';
 
 const VIDEO_URL = 'https://stepancar.github.io/alpha-video-kit/sample-stacked.mp4';
 
 const checkerBg = 'repeating-conic-gradient(#2a2a3e 0% 25%, #1e1e30 0% 50%) 50% / 20px 20px';
 
 export default function App() {
-  const glRef = useRef<AlphaVideoKitGL>(null);
-
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
@@ -27,7 +21,6 @@ export default function App() {
       <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
         <Card title="WebGL" badge="GPU">
           <alpha-video-kit-gl
-            ref={glRef}
             src={VIDEO_URL}
             crossOrigin="anonymous"
             autoPlay muted loop playsInline

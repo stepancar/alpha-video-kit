@@ -1,6 +1,6 @@
 {
   "name": "@alpha-video-kit/svg",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "SVG filter-based renderer for stacked alpha videos",
   "type": "module",
   "files": ["dist", "react.d.ts"],
