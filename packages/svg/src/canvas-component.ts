@@ -239,7 +239,6 @@ canvas{display:block;width:100%}
     }
     this.#ctx.filter = `url(#${this.#filterId})`;
     this.#ctx.drawImage(this.#video, 0, 0);
-    console.log('[alpha-video-kit-canvas] drawImage', this.#video.currentTime.toFixed(3));
   }
 
   // --- Proxied properties ---

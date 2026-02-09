@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { createRenderer, createCanvasFilterRenderer } from '../src/index.js';
+import { createRenderer, createSvgFilterRenderer } from '../src/index.js';
 
 describe('SVG Renderer', () => {
   let canvas: HTMLCanvasElement;
@@ -8,7 +8,7 @@ describe('SVG Renderer', () => {
     canvas?.remove();
   });
 
-  it('should create a canvas renderer by default', () => {
+  it('should create a renderer', () => {
     canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
 
@@ -18,21 +18,11 @@ describe('SVG Renderer', () => {
     renderer.destroy();
   });
 
-  it('should create a svg-filter renderer', () => {
+  it('should create a svg filter renderer directly', () => {
     canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
 
-    const renderer = createRenderer({ canvas, mode: 'svg-filter' });
-    expect(renderer).toBeDefined();
-    expect(renderer.isDestroyed).toBe(false);
-    renderer.destroy();
-  });
-
-  it('should create a canvas filter renderer directly', () => {
-    canvas = document.createElement('canvas');
-    document.body.appendChild(canvas);
-
-    const renderer = createCanvasFilterRenderer({ canvas });
+    const renderer = createSvgFilterRenderer({ canvas });
     expect(renderer).toBeDefined();
     renderer.destroy();
   });

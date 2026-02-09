@@ -100,22 +100,11 @@ export function createLiveDemoSection(): HTMLElement {
       },
     },
     {
-      title: 'Canvas 2D',
+      title: 'SVG Filter + Canvas 2D',
       badge: 'CPU',
       create(canvas) {
         try {
-          return createSVGRenderer({ canvas, mode: 'canvas' });
-        } catch {
-          return null;
-        }
-      },
-    },
-    {
-      title: 'SVG Filter',
-      badge: 'CPU',
-      create(canvas) {
-        try {
-          return createSVGRenderer({ canvas, mode: 'svg-filter' });
+          return createSVGRenderer({ canvas });
         } catch {
           return null;
         }
@@ -170,6 +159,7 @@ export function createLiveDemoSection(): HTMLElement {
         renderers.forEach((renderer, i) => {
           if (renderer) {
             renderer.drawFrame(video);
+            console.log(`[demo] drawFrame ${cards[i].title}`, video.currentTime.toFixed(3));
             frameCounts[i]++;
             const now = performance.now();
             const elapsed = now - lastFpsTimes[i];
