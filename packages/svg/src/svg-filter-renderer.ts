@@ -5,18 +5,18 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 /**
  * SVG filter renderer using ctx.filter on Canvas 2D.
  *
- * Injects an SVG <filter> into document.body, then on each frame:
- *   ctx.filter = 'url(#id)';
- *   ctx.drawImage(video, 0, 0);
- *
- * The filter shifts the bottom (alpha) half up, extracts R→alpha,
- * and composites it over the top (color) half.
+ * Uses an offscreen canvas at full (double) height so the filter can see
+ * both halves. The filter composites alpha, then the top half is copied
+ * to the visible canvas.
  */
 export function createSvgFilterRenderer(
   options: StackedAlphaRendererOptions,
 ): StackedAlphaRenderer {
   const { canvas } = options;
   const ctx = (canvas as HTMLCanvasElement).getContext('2d')!;
+
+  const offscreen = document.createElement('canvas');
+  const offCtx = offscreen.getContext('2d')!;
 
   const filterId = `avk-f-${Math.random().toString(36).slice(2, 8)}`;
   let filterSvg: SVGSVGElement | null = null;
@@ -82,13 +82,23 @@ export function createSvgFilterRenderer(
         canvas.height = halfH;
       }
 
+      if (offscreen.width !== w || offscreen.height !== fullH) {
+        offscreen.width = w;
+        offscreen.height = fullH;
+      }
+
       ensureFilter();
       filter!.setAttribute('width', String(w));
       filter!.setAttribute('height', String(fullH));
       feOffset!.setAttribute('dy', String(-halfH));
 
-      ctx.filter = `url(#${filterId})`;
-      ctx.drawImage(video, 0, 0);
+      // Draw full video with filter on offscreen (full height)
+      offCtx.filter = `url(#${filterId})`;
+      offCtx.drawImage(video, 0, 0);
+
+      // Copy top half (with correct alpha) to visible canvas
+      ctx.clearRect(0, 0, w, halfH);
+      ctx.drawImage(offscreen, 0, 0, w, halfH, 0, 0, w, halfH);
     },
 
     setPremultipliedAlpha(_value: boolean) {

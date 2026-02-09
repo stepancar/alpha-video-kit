@@ -28,7 +28,8 @@ export class AlphaVideoKitCanvas extends HTMLElement {
   #video!: HTMLVideoElement;
   #canvas!: HTMLCanvasElement;
   #ctx!: CanvasRenderingContext2D;
-  #clipDiv!: HTMLDivElement;
+  #offscreen!: HTMLCanvasElement;
+  #offCtx!: CanvasRenderingContext2D;
   #intersectionObs: IntersectionObserver | null = null;
   #childObs: MutationObserver | null = null;
   #isVisible = false;
@@ -49,16 +50,16 @@ export class AlphaVideoKitCanvas extends HTMLElement {
     shadow.innerHTML = `<style>
 :host{display:inline-block;overflow:hidden}
 video{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
-.clip{overflow:hidden;width:100%}
 canvas{display:block;width:100%}
 </style>
 <video></video>
-<div class="clip"><canvas></canvas></div>`;
+<canvas></canvas>`;
 
     this.#video = shadow.querySelector('video')!;
-    this.#clipDiv = shadow.querySelector('.clip')!;
     this.#canvas = shadow.querySelector('canvas')!;
     this.#ctx = this.#canvas.getContext('2d')!;
+    this.#offscreen = document.createElement('canvas');
+    this.#offCtx = this.#offscreen.getContext('2d')!;
 
     for (const evt of MEDIA_EVENTS) {
       this.#video.addEventListener(evt, (e) => {
@@ -129,8 +130,9 @@ canvas{display:block;width:100%}
     const halfH = Math.floor(fullH / 2);
 
     this.#canvas.width = w;
-    this.#canvas.height = fullH;
-    this.#clipDiv.style.aspectRatio = `${w} / ${halfH}`;
+    this.#canvas.height = halfH;
+    this.#offscreen.width = w;
+    this.#offscreen.height = fullH;
 
     this.#ensureFilter();
     this.#filter!.setAttribute('width', String(w));
@@ -232,13 +234,18 @@ canvas{display:block;width:100%}
   #renderFrame() {
     if (this.#video.readyState < 2) return;
     const w = this.#video.videoWidth;
-    const h = this.#video.videoHeight;
-    if (!w || !h) return;
-    if (this.#canvas.width !== w || this.#canvas.height !== h) {
+    const fullH = this.#video.videoHeight;
+    if (!w || !fullH) return;
+    const halfH = Math.floor(fullH / 2);
+    if (this.#offscreen.width !== w || this.#offscreen.height !== fullH) {
       this.#updateDimensions();
     }
-    this.#ctx.filter = `url(#${this.#filterId})`;
-    this.#ctx.drawImage(this.#video, 0, 0);
+    // Draw full video with filter on offscreen (full height)
+    this.#offCtx.filter = `url(#${this.#filterId})`;
+    this.#offCtx.drawImage(this.#video, 0, 0);
+    // Copy top half to visible canvas
+    this.#ctx.clearRect(0, 0, w, halfH);
+    this.#ctx.drawImage(this.#offscreen, 0, 0, w, halfH, 0, 0, w, halfH);
   }
 
   // --- Proxied properties ---
