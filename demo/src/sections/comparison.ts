@@ -54,9 +54,9 @@ export function createComparisonSection(): HTMLElement {
         </tr>
         <tr>
           <td>Web Component</td>
-          <td><code>&lt;stacked-alpha-video-gl&gt;</code></td>
-          <td><code>&lt;stacked-alpha-video-gpu&gt;</code></td>
-          <td><code>&lt;stacked-alpha-video-svg&gt;</code></td>
+          <td><code>&lt;alpha-video-kit-gl&gt;</code></td>
+          <td><code>&lt;alpha-video-kit-gpu&gt;</code></td>
+          <td><code>&lt;alpha-video-kit-svg&gt;</code></td>
         </tr>
         <tr>
           <td>Premultiplied Alpha</td>

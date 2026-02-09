@@ -1,57 +1,80 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { StackedAlphaVideoGL } from '../src/component.js';
+import { AlphaVideoKitGL } from '../src/component.js';
 
 // Register the custom element for tests
-if (!customElements.get('stacked-alpha-video-gl')) {
-  customElements.define('stacked-alpha-video-gl', StackedAlphaVideoGL);
+if (!customElements.get('alpha-video-kit-gl')) {
+  customElements.define('alpha-video-kit-gl', AlphaVideoKitGL);
 }
 
-describe('StackedAlphaVideoGL Component', () => {
-  let element: StackedAlphaVideoGL;
+describe('AlphaVideoKitGL Component', () => {
+  let element: AlphaVideoKitGL;
 
   afterEach(() => {
     element?.remove();
   });
 
   it('should be defined as a custom element', () => {
-    expect(customElements.get('stacked-alpha-video-gl')).toBe(StackedAlphaVideoGL);
+    expect(customElements.get('alpha-video-kit-gl')).toBe(AlphaVideoKitGL);
   });
 
   it('should create element via constructor', () => {
-    element = new StackedAlphaVideoGL();
+    element = new AlphaVideoKitGL();
     expect(element).toBeInstanceOf(HTMLElement);
   });
 
   it('should create element via document.createElement', () => {
-    element = document.createElement('stacked-alpha-video-gl') as StackedAlphaVideoGL;
-    expect(element).toBeInstanceOf(StackedAlphaVideoGL);
+    element = document.createElement('alpha-video-kit-gl') as AlphaVideoKitGL;
+    expect(element).toBeInstanceOf(AlphaVideoKitGL);
   });
 
-  it('should have a shadow root with canvas', () => {
-    element = new StackedAlphaVideoGL();
+  it('should have a shadow root with video and canvas', () => {
+    element = new AlphaVideoKitGL();
     expect(element.shadowRoot).toBeTruthy();
     expect(element.shadowRoot!.querySelector('canvas')).toBeTruthy();
+    expect(element.shadowRoot!.querySelector('video')).toBeTruthy();
   });
 
-  it('should handle premultipliedAlpha property', () => {
-    element = new StackedAlphaVideoGL();
-    expect(element.premultipliedAlpha).toBe(false);
+  it('should proxy video-like properties', () => {
+    element = new AlphaVideoKitGL();
+    expect(element.paused).toBe(true);
+    expect(element.currentTime).toBe(0);
+    expect(element.volume).toBe(1);
+    expect(element.muted).toBe(false);
+    expect(element.loop).toBe(false);
+    expect(element.playbackRate).toBe(1);
+  });
 
-    element.premultipliedAlpha = true;
-    expect(element.premultipliedAlpha).toBe(true);
-    expect(element.hasAttribute('premultipliedalpha')).toBe(true);
+  it('should mirror boolean attributes to internal video', () => {
+    element = new AlphaVideoKitGL();
+    document.body.appendChild(element);
 
-    element.premultipliedAlpha = false;
-    expect(element.premultipliedAlpha).toBe(false);
-    expect(element.hasAttribute('premultipliedalpha')).toBe(false);
+    element.muted = true;
+    expect(element.muted).toBe(true);
+    expect(element.hasAttribute('muted')).toBe(true);
+
+    element.loop = true;
+    expect(element.loop).toBe(true);
+    expect(element.hasAttribute('loop')).toBe(true);
+
+    element.muted = false;
+    expect(element.muted).toBe(false);
+    expect(element.hasAttribute('muted')).toBe(false);
   });
 
   it('should connect and disconnect without errors', () => {
-    element = new StackedAlphaVideoGL();
+    element = new AlphaVideoKitGL();
     document.body.appendChild(element);
     expect(element.isConnected).toBe(true);
 
     element.remove();
     expect(element.isConnected).toBe(false);
+  });
+
+  it('should expose play/pause/load methods', () => {
+    element = new AlphaVideoKitGL();
+    expect(typeof element.play).toBe('function');
+    expect(typeof element.pause).toBe('function');
+    expect(typeof element.load).toBe('function');
+    expect(typeof element.canPlayType).toBe('function');
   });
 });

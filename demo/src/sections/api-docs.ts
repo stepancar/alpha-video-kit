@@ -78,14 +78,12 @@ const tabs: TabDef[] = [
     code: `<span class="comment">// Install</span>
 <span class="keyword">npm install</span> <span class="string">@alpha-video-kit/webgl</span>
 
-<span class="comment">// Option 1: Web Component</span>
+<span class="comment">// Option 1: Web Component (HTMLVideoElement-like API)</span>
 <span class="keyword">import</span> <span class="string">'@alpha-video-kit/webgl/register'</span>;
 
-&lt;stacked-alpha-video-gl&gt;
-  &lt;video autoplay muted loop playsinline&gt;
-    &lt;source src=<span class="string">"video-stacked.mp4"</span> type=<span class="string">"video/mp4"</span> /&gt;
-  &lt;/video&gt;
-&lt;/stacked-alpha-video-gl&gt;
+&lt;alpha-video-kit-gl src=<span class="string">"video-stacked.mp4"</span>
+  autoplay muted loop playsinline&gt;
+&lt;/alpha-video-kit-gl&gt;
 
 <span class="comment">// Option 2: Low-level API</span>
 <span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@alpha-video-kit/webgl'</span>;
@@ -96,7 +94,7 @@ renderer.destroy();`,
     stackblitz: {
       title: 'Alpha Video Kit — WebGL',
       description: 'Play transparent video on the web using @alpha-video-kit/webgl',
-      deps: { '@alpha-video-kit/webgl': '^0.1.0' },
+      deps: { '@alpha-video-kit/webgl': '^0.2.0' },
       indexHtml: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -107,7 +105,7 @@ renderer.destroy();`,
 </head>
 <body>
   <h1>WebGL Renderer</h1>
-  <p>Transparent video rendered with <code>@alpha-video-kit/webgl</code></p>
+  <p>Transparent video rendered with <code>&lt;alpha-video-kit-gl&gt;</code></p>
   <div class="panels">
     <div class="panel">
       <div class="panel-label">Source <code>(stacked double-height)</code></div>
@@ -116,28 +114,22 @@ renderer.destroy();`,
     <div class="arrow">&rarr;</div>
     <div class="panel">
       <div class="panel-label">Result <code>(transparent)</code></div>
-      <div class="result"><canvas id="canvas"></canvas></div>
+      <div class="result"><alpha-video-kit-gl id="player" autoplay muted loop playsinline></alpha-video-kit-gl></div>
     </div>
   </div>
   <script type="module" src="./main.ts"></script>
 </body>
 </html>`,
-      mainTs: `import { createRenderer } from '@alpha-video-kit/webgl';
+      mainTs: `import '@alpha-video-kit/webgl/register';
 
-const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const video = document.getElementById('video') as HTMLVideoElement;
+const player = document.getElementById('player') as HTMLElement;
+
 video.src = '${SAMPLE_VIDEO_URL}';
 video.crossOrigin = 'anonymous';
 
-const renderer = createRenderer({ canvas });
-
-function loop() {
-  if (video.readyState >= 2) {
-    renderer.drawFrame(video);
-  }
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
+(player as any).src = '${SAMPLE_VIDEO_URL}';
+(player as any).crossOrigin = 'anonymous';
 `,
     },
   },
@@ -146,14 +138,12 @@ requestAnimationFrame(loop);
     code: `<span class="comment">// Install</span>
 <span class="keyword">npm install</span> <span class="string">@alpha-video-kit/webgpu</span>
 
-<span class="comment">// Option 1: Web Component</span>
+<span class="comment">// Option 1: Web Component (HTMLVideoElement-like API)</span>
 <span class="keyword">import</span> <span class="string">'@alpha-video-kit/webgpu/register'</span>;
 
-&lt;stacked-alpha-video-gpu&gt;
-  &lt;video autoplay muted loop playsinline&gt;
-    &lt;source src=<span class="string">"video-stacked.mp4"</span> type=<span class="string">"video/mp4"</span> /&gt;
-  &lt;/video&gt;
-&lt;/stacked-alpha-video-gpu&gt;
+&lt;alpha-video-kit-gpu src=<span class="string">"video-stacked.mp4"</span>
+  autoplay muted loop playsinline&gt;
+&lt;/alpha-video-kit-gpu&gt;
 
 <span class="comment">// Option 2: Low-level API (async)</span>
 <span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@alpha-video-kit/webgpu'</span>;
@@ -164,7 +154,7 @@ renderer.destroy();`,
     stackblitz: {
       title: 'Alpha Video Kit — WebGPU',
       description: 'Play transparent video on the web using @alpha-video-kit/webgpu',
-      deps: { '@alpha-video-kit/webgpu': '^0.1.0' },
+      deps: { '@alpha-video-kit/webgpu': '^0.2.0' },
       indexHtml: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -177,7 +167,7 @@ renderer.destroy();`,
 </head>
 <body>
   <h1>WebGPU Renderer</h1>
-  <p>Transparent video rendered with <code>@alpha-video-kit/webgpu</code></p>
+  <p>Transparent video rendered with <code>&lt;alpha-video-kit-gpu&gt;</code></p>
   <div class="panels">
     <div class="panel">
       <div class="panel-label">Source <code>(stacked double-height)</code></div>
@@ -186,38 +176,23 @@ renderer.destroy();`,
     <div class="arrow">&rarr;</div>
     <div class="panel">
       <div class="panel-label">Result <code>(transparent)</code></div>
-      <div class="result"><canvas id="canvas"></canvas></div>
+      <div class="result"><alpha-video-kit-gpu id="player" autoplay muted loop playsinline></alpha-video-kit-gpu></div>
     </div>
   </div>
   <div id="error" class="error"></div>
   <script type="module" src="./main.ts"></script>
 </body>
 </html>`,
-      mainTs: `import { createRenderer } from '@alpha-video-kit/webgpu';
+      mainTs: `import '@alpha-video-kit/webgpu/register';
 
-const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-const errorEl = document.getElementById('error')!;
 const video = document.getElementById('video') as HTMLVideoElement;
+const player = document.getElementById('player') as HTMLElement;
+
 video.src = '${SAMPLE_VIDEO_URL}';
 video.crossOrigin = 'anonymous';
 
-async function init() {
-  try {
-    const renderer = await createRenderer({ canvas });
-
-    function loop() {
-      if (video.readyState >= 2) {
-        renderer.drawFrame(video);
-      }
-      requestAnimationFrame(loop);
-    }
-    requestAnimationFrame(loop);
-  } catch (e) {
-    errorEl.textContent =
-      'WebGPU is not supported in this browser. Try Chrome or Edge.';
-  }
-}
-init();
+(player as any).src = '${SAMPLE_VIDEO_URL}';
+(player as any).crossOrigin = 'anonymous';
 `,
     },
   },
@@ -226,14 +201,12 @@ init();
     code: `<span class="comment">// Install</span>
 <span class="keyword">npm install</span> <span class="string">@alpha-video-kit/svg</span>
 
-<span class="comment">// Option 1: Web Component</span>
+<span class="comment">// Option 1: Web Component (HTMLVideoElement-like API)</span>
 <span class="keyword">import</span> <span class="string">'@alpha-video-kit/svg/register'</span>;
 
-&lt;stacked-alpha-video-svg&gt;
-  &lt;video autoplay muted loop playsinline&gt;
-    &lt;source src=<span class="string">"video-stacked.mp4"</span> type=<span class="string">"video/mp4"</span> /&gt;
-  &lt;/video&gt;
-&lt;/stacked-alpha-video-svg&gt;
+&lt;alpha-video-kit-svg src=<span class="string">"video-stacked.mp4"</span>
+  autoplay muted loop playsinline mode=<span class="string">"canvas"</span>&gt;
+&lt;/alpha-video-kit-svg&gt;
 
 <span class="comment">// Option 2: Low-level API with mode selection</span>
 <span class="keyword">import</span> { createRenderer } <span class="keyword">from</span> <span class="string">'@alpha-video-kit/svg'</span>;
@@ -245,7 +218,7 @@ renderer.destroy();`,
     stackblitz: {
       title: 'Alpha Video Kit — SVG Filter',
       description: 'Play transparent video on the web using @alpha-video-kit/svg',
-      deps: { '@alpha-video-kit/svg': '^0.1.0' },
+      deps: { '@alpha-video-kit/svg': '^0.2.0' },
       indexHtml: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -274,7 +247,7 @@ renderer.destroy();`,
 </head>
 <body>
   <h1>SVG / Canvas 2D Renderer</h1>
-  <p>Transparent video rendered with <code>@alpha-video-kit/svg</code></p>
+  <p>Transparent video rendered with <code>&lt;alpha-video-kit-svg&gt;</code></p>
   <div class="panels">
     <div class="panel">
       <div class="panel-label">Source <code>(stacked double-height)</code></div>
@@ -283,7 +256,7 @@ renderer.destroy();`,
     <div class="arrow">&rarr;</div>
     <div class="panel">
       <div class="panel-label">Result <code>(transparent)</code></div>
-      <div class="result"><canvas id="canvas"></canvas></div>
+      <div class="result"><alpha-video-kit-svg id="player" autoplay muted loop playsinline mode="canvas"></alpha-video-kit-svg></div>
     </div>
   </div>
   <div class="controls">
@@ -293,41 +266,28 @@ renderer.destroy();`,
   <script type="module" src="./main.ts"></script>
 </body>
 </html>`,
-      mainTs: `import { createRenderer } from '@alpha-video-kit/svg';
-import type { SvgRendererMode } from '@alpha-video-kit/svg';
+      mainTs: `import '@alpha-video-kit/svg/register';
 
-const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const video = document.getElementById('video') as HTMLVideoElement;
+const player = document.getElementById('player')!;
+
 video.src = '${SAMPLE_VIDEO_URL}';
 video.crossOrigin = 'anonymous';
 
-let currentMode: SvgRendererMode = 'canvas';
-let renderer = createRenderer({ canvas, mode: currentMode });
-
-function loop() {
-  if (video.readyState >= 2) {
-    renderer.drawFrame(video);
-  }
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
+(player as any).src = '${SAMPLE_VIDEO_URL}';
+(player as any).crossOrigin = 'anonymous';
 
 // Mode switcher
 document.getElementById('btn-canvas')!.addEventListener('click', () => {
-  switchMode('canvas');
+  player.setAttribute('mode', 'canvas');
+  document.getElementById('btn-canvas')!.classList.add('active');
+  document.getElementById('btn-svg')!.classList.remove('active');
 });
 document.getElementById('btn-svg')!.addEventListener('click', () => {
-  switchMode('svg-filter');
+  player.setAttribute('mode', 'svg-filter');
+  document.getElementById('btn-svg')!.classList.add('active');
+  document.getElementById('btn-canvas')!.classList.remove('active');
 });
-
-function switchMode(mode: SvgRendererMode) {
-  if (mode === currentMode) return;
-  currentMode = mode;
-  renderer.destroy();
-  renderer = createRenderer({ canvas, mode });
-  document.getElementById('btn-canvas')!.classList.toggle('active', mode === 'canvas');
-  document.getElementById('btn-svg')!.classList.toggle('active', mode === 'svg-filter');
-}
 `,
     },
   },

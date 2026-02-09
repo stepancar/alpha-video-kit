@@ -1,5 +1,5 @@
-import { StackedAlphaVideoSVG } from './component.js';
+import { AlphaVideoKitSVG } from './component.js';
 
-if (!customElements.get('stacked-alpha-video-svg')) {
-  customElements.define('stacked-alpha-video-svg', StackedAlphaVideoSVG);
+if (!customElements.get('alpha-video-kit-svg')) {
+  customElements.define('alpha-video-kit-svg', AlphaVideoKitSVG);
 }

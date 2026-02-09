@@ -1,185 +1,204 @@
 import { createRenderer } from './renderer.js';
 import type { StackedAlphaRenderer } from './types.js';
+import type { SvgRendererMode } from './renderer.js';
 
-export class StackedAlphaVideoSVG extends HTMLElement {
-  static observedAttributes = ['premultipliedalpha', 'mode'];
+const VIDEO_ATTRS = [
+  'src', 'crossorigin', 'preload', 'autoplay', 'loop',
+  'muted', 'playsinline', 'poster', 'width', 'height', 'mode',
+] as const;
 
-  #canvas: HTMLCanvasElement;
+const BOOLEAN_ATTRS = new Set(['autoplay', 'loop', 'muted', 'playsinline']);
+
+const MEDIA_EVENTS = [
+  'loadstart', 'progress', 'suspend', 'abort', 'error', 'emptied',
+  'stalled', 'loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough',
+  'playing', 'waiting', 'seeking', 'seeked', 'ended', 'durationchange',
+  'timeupdate', 'play', 'pause', 'ratechange', 'resize', 'volumechange',
+] as const;
+
+export class AlphaVideoKitSVG extends HTMLElement {
+  static observedAttributes = [...VIDEO_ATTRS];
+
+  #video!: HTMLVideoElement;
+  #canvas!: HTMLCanvasElement;
   #renderer: StackedAlphaRenderer | null = null;
-  #video: HTMLVideoElement | null = null;
-  #rafId: number | null = null;
-  #intersectionObserver: IntersectionObserver | null = null;
-  #mutationObserver: MutationObserver | null = null;
+  #intersectionObs: IntersectionObserver | null = null;
+  #childObs: MutationObserver | null = null;
   #isVisible = false;
-  #updateQueued = false;
+  #rafId = 0;
+  #vfcId = 0;
 
   constructor() {
     super();
     const shadow = this.attachShadow({ mode: 'open' });
-
-    shadow.innerHTML = `
-      <style>
-        :host {
-          display: inline-block;
-          position: relative;
-        }
-        canvas {
-          display: block;
-          width: 100%;
-          height: 100%;
-        }
-        ::slotted(video) {
-          position: absolute;
-          opacity: 0;
-          pointer-events: none;
-          width: 0;
-          height: 0;
-        }
-      </style>
-      <canvas></canvas>
-      <slot></slot>
-    `;
-
+    shadow.innerHTML = `<style>
+:host{display:inline-block;overflow:hidden}
+video{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
+canvas{display:block;width:100%;height:100%}
+</style><video></video><canvas></canvas>`;
+    this.#video = shadow.querySelector('video')!;
     this.#canvas = shadow.querySelector('canvas')!;
-  }
 
-  get premultipliedAlpha(): boolean {
-    return this.hasAttribute('premultipliedalpha');
-  }
-
-  set premultipliedAlpha(value: boolean) {
-    if (value) {
-      this.setAttribute('premultipliedalpha', '');
-    } else {
-      this.removeAttribute('premultipliedalpha');
-    }
-  }
-
-  attributeChangedCallback(name: string, _oldValue: string | null, _newValue: string | null) {
-    if (name === 'premultipliedalpha') {
-      this.#renderer?.setPremultipliedAlpha(this.premultipliedAlpha);
-    }
-    if (name === 'mode') {
-      this.#destroyRenderer();
-      this.#queueUpdate();
+    for (const evt of MEDIA_EVENTS) {
+      this.#video.addEventListener(evt, (e) => {
+        this.dispatchEvent(new Event(e.type, { bubbles: false, cancelable: false }));
+      });
     }
   }
 
   connectedCallback() {
-    this.#intersectionObserver = new IntersectionObserver(
+    for (const attr of VIDEO_ATTRS) {
+      if (attr === 'mode') continue;
+      if (this.hasAttribute(attr)) {
+        this.#mirrorAttr(attr, this.getAttribute(attr));
+      }
+    }
+    this.#syncSourceChildren();
+
+    this.#childObs = new MutationObserver(() => this.#syncSourceChildren());
+    this.#childObs.observe(this, { childList: true });
+
+    this.#intersectionObs = new IntersectionObserver(
       ([entry]) => {
         this.#isVisible = entry.isIntersecting;
-        this.#queueUpdate();
+        if (this.#isVisible) {
+          this.#ensureRenderer();
+          this.#startLoop();
+        } else {
+          this.#stopLoop();
+        }
       },
       { threshold: 0 },
     );
-    this.#intersectionObserver.observe(this);
-
-    this.#mutationObserver = new MutationObserver(() => this.#queueUpdate());
-    this.#mutationObserver.observe(this, { childList: true });
-
-    this.#queueUpdate();
+    this.#intersectionObs.observe(this);
   }
 
   disconnectedCallback() {
-    this.#intersectionObserver?.disconnect();
-    this.#intersectionObserver = null;
-    this.#mutationObserver?.disconnect();
-    this.#mutationObserver = null;
-    this.#detachVideo();
-    this.#destroyRenderer();
-  }
-
-  #queueUpdate() {
-    if (this.#updateQueued) return;
-    this.#updateQueued = true;
-    queueMicrotask(() => {
-      this.#updateQueued = false;
-      this.#update();
-    });
-  }
-
-  #update() {
-    const video = this.querySelector('video');
-
-    if (video !== this.#video) {
-      this.#detachVideo();
-      this.#video = video;
-      if (video) {
-        this.#attachVideo(video);
-      }
-    }
-
-    if (this.#isVisible && this.#video) {
-      this.#ensureRenderer();
-      this.#renderFrame();
-      this.#startLoop();
-    } else {
-      this.#stopLoop();
-    }
-  }
-
-  #attachVideo(video: HTMLVideoElement) {
-    video.addEventListener('play', this.#onVideoStateChange);
-    video.addEventListener('pause', this.#onVideoStateChange);
-    video.addEventListener('seeked', this.#onVideoStateChange);
-    video.addEventListener('loadeddata', this.#onVideoStateChange);
-  }
-
-  #detachVideo() {
-    if (!this.#video) return;
-    this.#video.removeEventListener('play', this.#onVideoStateChange);
-    this.#video.removeEventListener('pause', this.#onVideoStateChange);
-    this.#video.removeEventListener('seeked', this.#onVideoStateChange);
-    this.#video.removeEventListener('loadeddata', this.#onVideoStateChange);
-    this.#video = null;
     this.#stopLoop();
-  }
-
-  #onVideoStateChange = () => {
-    this.#queueUpdate();
-  };
-
-  #ensureRenderer() {
-    if (this.#renderer && !this.#renderer.isDestroyed) return;
-    const mode = (this.getAttribute('mode') as 'svg-filter' | 'canvas') ?? 'canvas';
-    this.#renderer = createRenderer({
-      canvas: this.#canvas,
-      premultipliedAlpha: this.premultipliedAlpha,
-      mode,
-    });
-  }
-
-  #destroyRenderer() {
+    this.#intersectionObs?.disconnect();
+    this.#intersectionObs = null;
+    this.#childObs?.disconnect();
+    this.#childObs = null;
     this.#renderer?.destroy();
     this.#renderer = null;
   }
 
-  #renderFrame() {
-    if (!this.#renderer || !this.#video || this.#video.readyState < 2) return;
-    this.#renderer.drawFrame(this.#video);
+  attributeChangedCallback(name: string, _old: string | null, value: string | null) {
+    if (name === 'mode') {
+      // Recreate renderer with new mode
+      this.#renderer?.destroy();
+      this.#renderer = null;
+      if (this.#isVisible) {
+        this.#ensureRenderer();
+        this.#startLoop();
+      }
+      return;
+    }
+    this.#mirrorAttr(name, value);
+  }
+
+  #mirrorAttr(name: string, value: string | null) {
+    if (BOOLEAN_ATTRS.has(name)) {
+      (this.#video as any)[name] = value !== null;
+    } else if (value === null) {
+      this.#video.removeAttribute(name);
+    } else {
+      this.#video.setAttribute(name, value);
+    }
+  }
+
+  #syncSourceChildren() {
+    this.#video.querySelectorAll('source').forEach((s) => s.remove());
+    this.querySelectorAll('source').forEach((s) => {
+      this.#video.appendChild(s.cloneNode(true));
+    });
+    if (this.#video.querySelectorAll('source').length > 0 && !this.#video.src) {
+      this.#video.load();
+    }
+  }
+
+  #ensureRenderer() {
+    if (this.#renderer && !this.#renderer.isDestroyed) return;
+    try {
+      const mode = (this.getAttribute('mode') as SvgRendererMode) || 'canvas';
+      this.#renderer = createRenderer({ canvas: this.#canvas, mode });
+    } catch { /* fallback not available */ }
   }
 
   #startLoop() {
-    if (this.#rafId !== null) return;
-    if (!this.#video || this.#video.paused) return;
-
-    const loop = () => {
-      this.#renderFrame();
-      if (this.#video && !this.#video.paused && this.#isVisible) {
-        this.#rafId = requestAnimationFrame(loop);
-      } else {
-        this.#rafId = null;
-      }
-    };
-
-    this.#rafId = requestAnimationFrame(loop);
+    if (!this.#isVisible || !this.#renderer) return;
+    this.#stopLoop();
+    if ('requestVideoFrameCallback' in this.#video) {
+      const tick = () => {
+        if (!this.#isVisible || !this.#renderer) return;
+        this.#renderFrame();
+        this.#vfcId = (this.#video as any).requestVideoFrameCallback(tick);
+      };
+      this.#vfcId = (this.#video as any).requestVideoFrameCallback(tick);
+    } else {
+      const tick = () => {
+        if (!this.#isVisible || !this.#renderer) return;
+        this.#renderFrame();
+        this.#rafId = requestAnimationFrame(tick);
+      };
+      this.#rafId = requestAnimationFrame(tick);
+    }
   }
 
   #stopLoop() {
-    if (this.#rafId !== null) {
+    if (this.#vfcId) {
+      (this.#video as any).cancelVideoFrameCallback?.(this.#vfcId);
+      this.#vfcId = 0;
+    }
+    if (this.#rafId) {
       cancelAnimationFrame(this.#rafId);
-      this.#rafId = null;
+      this.#rafId = 0;
     }
   }
+
+  #renderFrame() {
+    if (this.#video.readyState < 2 || !this.#renderer) return;
+    this.#renderer.drawFrame(this.#video);
+  }
+
+  // --- Proxied properties ---
+  get src() { return this.#video.src; }
+  set src(v: string) { this.setAttribute('src', v); }
+  get currentSrc() { return this.#video.currentSrc; }
+  get currentTime() { return this.#video.currentTime; }
+  set currentTime(v: number) { this.#video.currentTime = v; }
+  get duration() { return this.#video.duration; }
+  get paused() { return this.#video.paused; }
+  get ended() { return this.#video.ended; }
+  get readyState() { return this.#video.readyState; }
+  get videoWidth() { return this.#video.videoWidth; }
+  get videoHeight() { return Math.floor(this.#video.videoHeight / 2); }
+  get volume() { return this.#video.volume; }
+  set volume(v: number) { this.#video.volume = v; }
+  get playbackRate() { return this.#video.playbackRate; }
+  set playbackRate(v: number) { this.#video.playbackRate = v; }
+  get defaultPlaybackRate() { return this.#video.defaultPlaybackRate; }
+  set defaultPlaybackRate(v: number) { this.#video.defaultPlaybackRate = v; }
+  get muted() { return this.#video.muted; }
+  set muted(v: boolean) { this.#video.muted = v; this.toggleAttribute('muted', v); }
+  get loop() { return this.#video.loop; }
+  set loop(v: boolean) { this.#video.loop = v; this.toggleAttribute('loop', v); }
+  get autoplay() { return this.#video.autoplay; }
+  set autoplay(v: boolean) { this.#video.autoplay = v; this.toggleAttribute('autoplay', v); }
+  get preload() { return this.#video.preload; }
+  set preload(v: string) { this.setAttribute('preload', v); }
+  get crossOrigin() { return this.#video.crossOrigin; }
+  set crossOrigin(v: string | null) { v === null ? this.removeAttribute('crossorigin') : this.setAttribute('crossorigin', v); }
+  get buffered() { return this.#video.buffered; }
+  get seekable() { return this.#video.seekable; }
+  get played() { return this.#video.played; }
+  get networkState() { return this.#video.networkState; }
+  get error() { return this.#video.error; }
+  get seeking() { return this.#video.seeking; }
+
+  // --- Proxied methods ---
+  play() { return this.#video.play(); }
+  pause() { this.#video.pause(); }
+  load() { this.#video.load(); }
+  canPlayType(type: string) { return this.#video.canPlayType(type); }
 }

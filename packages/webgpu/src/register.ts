@@ -1,5 +1,5 @@
-import { StackedAlphaVideoGPU } from './component.js';
+import { AlphaVideoKitGPU } from './component.js';
 
-if (!customElements.get('stacked-alpha-video-gpu')) {
-  customElements.define('stacked-alpha-video-gpu', StackedAlphaVideoGPU);
+if (!customElements.get('alpha-video-kit-gpu')) {
+  customElements.define('alpha-video-kit-gpu', AlphaVideoKitGPU);
 }

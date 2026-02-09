@@ -20,19 +20,28 @@ A shader (or pixel manipulation) samples both halves and composites the result w
 
 ## Quick Start
 
-### Web Component
+### Web Component (recommended)
+
+Each package exposes a custom element with an API identical to `<video>`. Just import the register module and use the element directly:
 
 ```html
 <script type="module">
   import '@alpha-video-kit/webgl/register';
 </script>
 
-<stacked-alpha-video-gl>
-  <video autoplay muted loop playsinline>
-    <source src="video-stacked.mp4" type="video/mp4" />
-  </video>
-</stacked-alpha-video-gl>
+<alpha-video-kit-gl src="video-stacked.mp4" autoplay muted loop playsinline>
+</alpha-video-kit-gl>
 ```
+
+The element supports all standard `<video>` attributes (`src`, `autoplay`, `muted`, `loop`, `playsinline`, `crossorigin`, `preload`, `poster`, `width`, `height`), properties (`currentTime`, `duration`, `paused`, `volume`, etc.), methods (`play()`, `pause()`, `load()`), and events (`play`, `pause`, `timeupdate`, `ended`, etc.).
+
+It internally manages a hidden `<video>` + visible `<canvas>`, renders via `requestVideoFrameCallback`, and pauses rendering when offscreen.
+
+| Package | Tag Name |
+|---------|----------|
+| `@alpha-video-kit/webgl` | `<alpha-video-kit-gl>` |
+| `@alpha-video-kit/webgpu` | `<alpha-video-kit-gpu>` |
+| `@alpha-video-kit/svg` | `<alpha-video-kit-svg>` |
 
 ### Low-level API
 
