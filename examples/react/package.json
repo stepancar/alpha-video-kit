@@ -7,9 +7,9 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@alpha-video-kit/svg": "^0.2.4",
-    "@alpha-video-kit/webgl": "^0.2.2",
-    "@alpha-video-kit/webgpu": "^0.2.2",
+    "@alpha-video-kit/svg": "^0.3.0",
+    "@alpha-video-kit/webgl": "^0.2.3",
+    "@alpha-video-kit/webgpu": "^0.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

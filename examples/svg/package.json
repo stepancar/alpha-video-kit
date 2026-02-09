@@ -7,7 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@alpha-video-kit/svg": "^0.2.4"
+    "@alpha-video-kit/svg": "^0.3.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0",
