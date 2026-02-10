@@ -1,7 +1,7 @@
 import '@alpha-video-kit/webgl/register';
 import { autopause } from '@alpha-video-kit/autopause';
 
-const VIDEO_SRC = 'https://stepancar.github.io/alpha-video-kit/sample-stacked.mp4';
+const VIDEO_SRC = 'https://stepancar.github.io/alpha-video-kit/sample-stacked-small.mp4';
 const TOTAL = 300;
 
 const grid = document.getElementById('grid')!;
