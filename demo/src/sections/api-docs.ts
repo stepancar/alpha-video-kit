@@ -84,6 +84,25 @@ renderer.destroy();`,
   src=<span class="string">"video-stacked.mp4"</span>
   autoPlay muted loop playsInline /&gt;`,
   },
+  {
+    label: 'Stress Test',
+    exampleDir: 'stress-test',
+    code: `<span class="comment">// 300 videos, ~50 visible — 1 shared WebGL context</span>
+<span class="keyword">npm install</span> <span class="string">@alpha-video-kit/webgl @alpha-video-kit/autopause</span>
+
+<span class="keyword">import</span> <span class="string">'@alpha-video-kit/webgl/register'</span>;
+<span class="keyword">import</span> { autopause } <span class="keyword">from</span> <span class="string">'@alpha-video-kit/autopause'</span>;
+
+<span class="keyword">for</span> (<span class="keyword">let</span> i = 0; i &lt; 300; i++) {
+  <span class="keyword">const</span> el = document.createElement(<span class="string">'alpha-video-kit-gl'</span>);
+  el.setAttribute(<span class="string">'src'</span>, <span class="string">'video.mp4'</span>);
+  el.setAttribute(<span class="string">'autoplay'</span>, <span class="string">''</span>);
+  el.setAttribute(<span class="string">'muted'</span>, <span class="string">''</span>);
+  el.setAttribute(<span class="string">'loop'</span>, <span class="string">''</span>);
+  document.body.appendChild(el);
+  autopause(el); <span class="comment">// pause when off-screen</span>
+}`,
+  },
 ];
 
 export function createApiDocsSection(): HTMLElement {
