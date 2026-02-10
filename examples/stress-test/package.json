@@ -7,6 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@alpha-video-kit/autopause": "^0.1.0",
     "@alpha-video-kit/webgl": "^0.3.0"
   },
   "devDependencies": {

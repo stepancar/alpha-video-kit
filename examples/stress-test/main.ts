@@ -1,4 +1,5 @@
 import '@alpha-video-kit/webgl/register';
+import { autopause } from '@alpha-video-kit/autopause';
 
 const VIDEO_SRC = 'https://stepancar.github.io/alpha-video-kit/sample-stacked.mp4';
 const TOTAL = 300;
@@ -25,6 +26,7 @@ for (let i = 0; i < TOTAL; i++) {
 
   cell.appendChild(player);
   grid.appendChild(cell);
+  autopause(player);
 }
 
 // --- Visible count via IntersectionObserver ---
