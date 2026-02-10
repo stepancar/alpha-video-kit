@@ -7,7 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@alpha-video-kit/webgl": "^0.2.3"
+    "@alpha-video-kit/webgl": "^0.3.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0",

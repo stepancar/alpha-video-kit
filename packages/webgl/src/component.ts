@@ -1,5 +1,4 @@
-import { createRenderer } from './renderer.js';
-import type { StackedAlphaRenderer } from './types.js';
+import { acquire, release, processFrame, type SharedGLContext } from './shared-webgl.js';
 
 const VIDEO_ATTRS = [
   'src', 'crossorigin', 'preload', 'autoplay', 'loop',
@@ -20,12 +19,15 @@ export class AlphaVideoKitGL extends HTMLElement {
 
   #video!: HTMLVideoElement;
   #canvas!: HTMLCanvasElement;
-  #renderer: StackedAlphaRenderer | null = null;
+  #ctx!: CanvasRenderingContext2D;
   #intersectionObs: IntersectionObserver | null = null;
   #childObs: MutationObserver | null = null;
   #isVisible = false;
   #rafId = 0;
   #vfcId = 0;
+  #premultipliedAlpha = false;
+
+  #glCtx: SharedGLContext | null = null;
 
   constructor() {
     super();
@@ -37,6 +39,7 @@ canvas{display:block;width:100%;height:100%}
 </style><video></video><canvas></canvas>`;
     this.#video = shadow.querySelector('video')!;
     this.#canvas = shadow.querySelector('canvas')!;
+    this.#ctx = this.#canvas.getContext('2d')!;
 
     for (const evt of MEDIA_EVENTS) {
       this.#video.addEventListener(evt, (e) => {
@@ -56,11 +59,12 @@ canvas{display:block;width:100%;height:100%}
     this.#childObs = new MutationObserver(() => this.#syncSourceChildren());
     this.#childObs.observe(this, { childList: true });
 
+    this.#glCtx = acquire();
+
     this.#intersectionObs = new IntersectionObserver(
       ([entry]) => {
         this.#isVisible = entry.isIntersecting;
         if (this.#isVisible) {
-          this.#ensureRenderer();
           this.#startLoop();
         } else {
           this.#stopLoop();
@@ -77,8 +81,10 @@ canvas{display:block;width:100%;height:100%}
     this.#intersectionObs = null;
     this.#childObs?.disconnect();
     this.#childObs = null;
-    this.#renderer?.destroy();
-    this.#renderer = null;
+    if (this.#glCtx) {
+      release(this.#glCtx);
+      this.#glCtx = null;
+    }
   }
 
   attributeChangedCallback(name: string, _old: string | null, value: string | null) {
@@ -105,26 +111,19 @@ canvas{display:block;width:100%;height:100%}
     }
   }
 
-  #ensureRenderer() {
-    if (this.#renderer && !this.#renderer.isDestroyed) return;
-    try {
-      this.#renderer = createRenderer({ canvas: this.#canvas });
-    } catch { /* WebGL not available */ }
-  }
-
   #startLoop() {
-    if (!this.#isVisible || !this.#renderer) return;
+    if (!this.#isVisible || !this.#glCtx) return;
     this.#stopLoop();
     if ('requestVideoFrameCallback' in this.#video) {
       const tick = () => {
-        if (!this.#isVisible || !this.#renderer) return;
+        if (!this.#isVisible || !this.#glCtx) return;
         this.#renderFrame();
         this.#vfcId = this.#video.requestVideoFrameCallback(tick);
       };
       this.#vfcId = this.#video.requestVideoFrameCallback(tick);
     } else {
       const tick = () => {
-        if (!this.#isVisible || !this.#renderer) return;
+        if (!this.#isVisible || !this.#glCtx) return;
         this.#renderFrame();
         this.#rafId = requestAnimationFrame(tick);
       };
@@ -144,8 +143,8 @@ canvas{display:block;width:100%;height:100%}
   }
 
   #renderFrame() {
-    if (this.#video.readyState < 2 || !this.#renderer) return;
-    this.#renderer.drawFrame(this.#video);
+    if (this.#video.readyState < 2 || !this.#glCtx) return;
+    processFrame(this.#glCtx, this.#video, this.#canvas, this.#ctx, this.#premultipliedAlpha);
   }
 
   // --- Proxied properties ---
