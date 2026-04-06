@@ -100,6 +100,23 @@ export function createLiveDemoSection(): HTMLElement {
       },
     },
     {
+      title: 'Canvas2D + SVG Filter (fallback)',
+      badge: 'Fallback',
+      create(canvas) {
+        // Block WebGL on this canvas so createRenderer falls back to Canvas2D
+        const origGetContext = canvas.getContext.bind(canvas);
+        canvas.getContext = ((id: string, ...args: any[]) => {
+          if (id === 'webgl' || id === 'webgl2') return null;
+          return origGetContext(id, ...args);
+        }) as any;
+        try {
+          return createWebGLRenderer({ canvas });
+        } catch {
+          return null;
+        }
+      },
+    },
+    {
       title: 'SVG Filter + Canvas 2D',
       badge: 'CPU',
       create(canvas) {

@@ -1,5 +1,7 @@
 import { vertexShaderSource, fragmentShaderSource } from './shaders.js';
 import type { StackedAlphaRenderer, StackedAlphaRendererOptions } from './types.js';
+import { acquireCanvas2D, releaseCanvas2D, processFrameCanvas2D, type SharedCanvas2DContext } from './canvas2d-fallback.js';
+import { isSafari } from './platform.js';
 
 function compileShader(
   gl: WebGLRenderingContext,
@@ -36,9 +38,10 @@ function createProgram(
   return program;
 }
 
-export function createRenderer(options: StackedAlphaRendererOptions): StackedAlphaRenderer {
-  const { canvas, premultipliedAlpha = false } = options;
-
+function createWebGLRenderer(
+  canvas: HTMLCanvasElement | OffscreenCanvas,
+  premultipliedAlpha: boolean,
+): StackedAlphaRenderer {
   const contextOptions: WebGLContextAttributes = {
     antialias: false,
     depth: false,
@@ -131,4 +134,46 @@ export function createRenderer(options: StackedAlphaRendererOptions): StackedAlp
       return destroyed;
     },
   };
+}
+
+function createCanvas2DFallbackRenderer(
+  canvas: HTMLCanvasElement,
+): StackedAlphaRenderer {
+  const ctx = canvas.getContext('2d')!;
+  let c2dCtx: SharedCanvas2DContext = acquireCanvas2D();
+  let destroyed = false;
+
+  return {
+    drawFrame(video: HTMLVideoElement) {
+      if (destroyed) return;
+      processFrameCanvas2D(c2dCtx, video, canvas, ctx);
+    },
+
+    setPremultipliedAlpha(_value: boolean) {
+      // Canvas2D+SVG filter always produces premultiplied output
+    },
+
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      releaseCanvas2D(c2dCtx);
+    },
+
+    get isDestroyed() {
+      return destroyed;
+    },
+  };
+}
+
+export function createRenderer(options: StackedAlphaRendererOptions): StackedAlphaRenderer {
+  const { canvas, premultipliedAlpha = false } = options;
+
+  try {
+    return createWebGLRenderer(canvas, premultipliedAlpha);
+  } catch (e) {
+    if (!isSafari()) {
+      return createCanvas2DFallbackRenderer(canvas as HTMLCanvasElement);
+    }
+    throw e;
+  }
 }

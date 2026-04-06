@@ -1,4 +1,6 @@
 import { acquire, release, processFrame, type SharedGLContext } from './shared-webgl.js';
+import { acquireCanvas2D, releaseCanvas2D, processFrameCanvas2D, type SharedCanvas2DContext } from './canvas2d-fallback.js';
+import { isSafari } from './platform.js';
 
 const VIDEO_ATTRS = [
   'src', 'crossorigin', 'preload', 'autoplay', 'loop',
@@ -28,6 +30,7 @@ export class AlphaVideoKitGL extends HTMLElement {
   #premultipliedAlpha = false;
 
   #glCtx: SharedGLContext | null = null;
+  #c2dCtx: SharedCanvas2DContext | null = null;
 
   constructor() {
     super();
@@ -59,7 +62,13 @@ canvas{display:block;width:100%;height:100%}
     this.#childObs = new MutationObserver(() => this.#syncSourceChildren());
     this.#childObs.observe(this, { childList: true });
 
-    this.#glCtx = acquire();
+    try {
+      this.#glCtx = acquire();
+    } catch {
+      if (!isSafari()) {
+        this.#c2dCtx = acquireCanvas2D();
+      }
+    }
 
     this.#intersectionObs = new IntersectionObserver(
       ([entry]) => {
@@ -84,6 +93,10 @@ canvas{display:block;width:100%;height:100%}
     if (this.#glCtx) {
       release(this.#glCtx);
       this.#glCtx = null;
+    }
+    if (this.#c2dCtx) {
+      releaseCanvas2D(this.#c2dCtx);
+      this.#c2dCtx = null;
     }
   }
 
@@ -112,18 +125,18 @@ canvas{display:block;width:100%;height:100%}
   }
 
   #startLoop() {
-    if (!this.#isVisible || !this.#glCtx) return;
+    if (!this.#isVisible || (!this.#glCtx && !this.#c2dCtx)) return;
     this.#stopLoop();
     if ('requestVideoFrameCallback' in this.#video) {
       const tick = () => {
-        if (!this.#isVisible || !this.#glCtx) return;
+        if (!this.#isVisible || (!this.#glCtx && !this.#c2dCtx)) return;
         this.#renderFrame();
         this.#vfcId = this.#video.requestVideoFrameCallback(tick);
       };
       this.#vfcId = this.#video.requestVideoFrameCallback(tick);
     } else {
       const tick = () => {
-        if (!this.#isVisible || !this.#glCtx) return;
+        if (!this.#isVisible || (!this.#glCtx && !this.#c2dCtx)) return;
         this.#renderFrame();
         this.#rafId = requestAnimationFrame(tick);
       };
@@ -143,8 +156,12 @@ canvas{display:block;width:100%;height:100%}
   }
 
   #renderFrame() {
-    if (this.#video.readyState < 2 || !this.#glCtx) return;
-    processFrame(this.#glCtx, this.#video, this.#canvas, this.#ctx, this.#premultipliedAlpha);
+    if (this.#video.readyState < 2) return;
+    if (this.#glCtx) {
+      processFrame(this.#glCtx, this.#video, this.#canvas, this.#ctx, this.#premultipliedAlpha);
+    } else if (this.#c2dCtx) {
+      processFrameCanvas2D(this.#c2dCtx, this.#video, this.#canvas, this.#ctx);
+    }
   }
 
   // --- Proxied properties ---
