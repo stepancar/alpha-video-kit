@@ -51,6 +51,18 @@ export function createBackstorySection(): HTMLElement {
           videos right in the browser.
         </p>
       </div>
+
+      <div class="timeline-item">
+        <h3>Native Browser Support</h3>
+        <p>
+          The stacked-frame technique is a workaround for browsers that can't play
+          transparent video directly. To help fix this at the source, we opened a
+          <a href="https://github.com/WebKit/WebKit/pull/64837"
+             target="_blank" style="color: var(--color-accent-light);">pull request to WebKit</a>
+          adding support for transparent WebM. Once browsers play alpha video natively,
+          tricks like this one won't be necessary.
+        </p>
+      </div>
     </div>
   `;
   return section;
