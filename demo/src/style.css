@@ -228,6 +228,39 @@ section:first-of-type {
   gap: 24px;
 }
 
+.demo-dropzone {
+  position: relative;
+  border: 2px dashed transparent;
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.demo-dropzone.dragover {
+  border-color: var(--color-accent-light);
+  background: rgba(124, 92, 255, 0.06);
+}
+
+.demo-dropzone-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-accent-light);
+  background: rgba(10, 10, 20, 0.78);
+  border-radius: var(--radius);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.demo-dropzone.dragover .demo-dropzone-overlay {
+  display: flex;
+}
+
 .demo-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);

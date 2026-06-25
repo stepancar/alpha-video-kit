@@ -52,7 +52,15 @@ export function createLiveDemoSection(): HTMLElement {
                style="width:240px;padding:4px 10px;border-radius:6px;border:1px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text);font-size:13px;" />
       </label>
     </div>
-    <div class="demo-container" id="demo-cards"></div>
+    <div class="demo-dropzone" id="demo-dropzone">
+      <div class="demo-container" id="demo-cards"></div>
+      <div class="demo-dropzone-overlay" id="demo-dropzone-overlay">
+        Drop a double-height (stacked color + alpha) video to preview it
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--color-text-muted);margin-top:10px;text-align:center;">
+      Tip: drag &amp; drop a double-height video file here, or paste a URL above.
+    </p>
   `;
 
   // Source videos: original with alpha + stacked version
@@ -205,6 +213,23 @@ export function createLiveDemoSection(): HTMLElement {
     const playBtn = section.querySelector('#demo-play-btn') as HTMLButtonElement;
     const pauseBtn = section.querySelector('#demo-pause-btn') as HTMLButtonElement;
     const urlInput = section.querySelector('#demo-video-url') as HTMLInputElement;
+    const dropzone = section.querySelector('#demo-dropzone') as HTMLElement;
+
+    // Object URL for a dropped local file, kept so it can be revoked on replace.
+    let objectUrl: string | null = null;
+
+    function loadSource(src: string, isObjectUrl = false) {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
+      if (isObjectUrl) objectUrl = src;
+      video.src = src;
+      video.load();
+      video.play().catch(() => {});
+      playBtn.classList.add('active');
+      pauseBtn.classList.remove('active');
+    }
 
     playBtn.addEventListener('click', () => {
       video.play().catch(() => {});
@@ -220,15 +245,40 @@ export function createLiveDemoSection(): HTMLElement {
 
     urlInput.addEventListener('change', () => {
       const url = urlInput.value.trim();
-      if (url) {
-        video.src = url;
-        video.load();
+      if (url) loadSource(url);
+    });
+
+    // Drag & drop a double-height (stacked color + alpha) video file.
+    let dragDepth = 0;
+    dropzone.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragDepth++;
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    });
+    dropzone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (dragDepth === 0) dropzone.classList.remove('dragover');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragDepth = 0;
+      dropzone.classList.remove('dragover');
+      const file = e.dataTransfer?.files?.[0];
+      if (file && file.type.startsWith('video/')) {
+        urlInput.value = '';
+        loadSource(URL.createObjectURL(file), true);
       }
     });
 
     window.addEventListener('beforeunload', () => {
       cancelAnimationFrame(rafId);
       renderers.forEach((r) => r?.destroy());
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     });
   });
 
