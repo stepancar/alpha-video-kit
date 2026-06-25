@@ -106,7 +106,7 @@ canvas{display:block;width:100%;height:100%}
 
   #mirrorAttr(name: string, value: string | null) {
     if (BOOLEAN_ATTRS.has(name)) {
-      (this.#video as any)[name] = value !== null;
+      (this.#video as unknown as Record<string, boolean>)[name] = value !== null;
     } else if (value === null) {
       this.#video.removeAttribute(name);
     } else {
@@ -191,7 +191,7 @@ canvas{display:block;width:100%;height:100%}
   get preload() { return this.#video.preload; }
   set preload(v: string) { this.setAttribute('preload', v); }
   get crossOrigin() { return this.#video.crossOrigin; }
-  set crossOrigin(v: string | null) { v === null ? this.removeAttribute('crossorigin') : this.setAttribute('crossorigin', v); }
+  set crossOrigin(v: string | null) { if (v === null) this.removeAttribute('crossorigin'); else this.setAttribute('crossorigin', v); }
   get buffered() { return this.#video.buffered; }
   get seekable() { return this.#video.seekable; }
   get played() { return this.#video.played; }

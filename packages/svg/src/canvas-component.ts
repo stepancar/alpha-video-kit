@@ -117,7 +117,7 @@ canvas{display:block;width:100%}
 
   #mirrorAttr(name: string, value: string | null) {
     if (BOOLEAN_ATTRS.has(name)) {
-      (this.#video as any)[name] = value !== null;
+      (this.#video as unknown as Record<string, boolean>)[name] = value !== null;
     } else if (value === null) {
       this.#video.removeAttribute(name);
     } else {
@@ -142,9 +142,9 @@ canvas{display:block;width:100%}
       const tick = () => {
         if (!this.#isVisible) return;
         this.#renderFrame();
-        this.#vfcId = (this.#video as any).requestVideoFrameCallback(tick);
+        this.#vfcId = this.#video.requestVideoFrameCallback(tick);
       };
-      this.#vfcId = (this.#video as any).requestVideoFrameCallback(tick);
+      this.#vfcId = this.#video.requestVideoFrameCallback(tick);
     } else {
       const tick = () => {
         if (!this.#isVisible) return;
@@ -157,7 +157,7 @@ canvas{display:block;width:100%}
 
   #stopLoop() {
     if (this.#vfcId) {
-      (this.#video as any).cancelVideoFrameCallback?.(this.#vfcId);
+      this.#video.cancelVideoFrameCallback?.(this.#vfcId);
       this.#vfcId = 0;
     }
     if (this.#rafId) {
@@ -202,7 +202,7 @@ canvas{display:block;width:100%}
   get preload() { return this.#video.preload; }
   set preload(v: string) { this.setAttribute('preload', v); }
   get crossOrigin() { return this.#video.crossOrigin; }
-  set crossOrigin(v: string | null) { v === null ? this.removeAttribute('crossorigin') : this.setAttribute('crossorigin', v); }
+  set crossOrigin(v: string | null) { if (v === null) this.removeAttribute('crossorigin'); else this.setAttribute('crossorigin', v); }
   get buffered() { return this.#video.buffered; }
   get seekable() { return this.#video.seekable; }
   get played() { return this.#video.played; }

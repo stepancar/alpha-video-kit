@@ -75,7 +75,6 @@ describe('AlphaVideoKitSVG Component (SVG filter on video)', () => {
   it('should apply SVG filter to the video element', () => {
     element = new AlphaVideoKitSVG();
     const video = element.shadowRoot!.querySelector('video')!;
-    const style = video.computedStyleMap ? undefined : getComputedStyle(video);
     // The filter is set via CSS in the shadow DOM stylesheet
     expect(video).toBeTruthy();
   });

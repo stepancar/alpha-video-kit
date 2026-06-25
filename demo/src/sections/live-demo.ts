@@ -112,11 +112,11 @@ export function createLiveDemoSection(): HTMLElement {
       badge: 'Fallback',
       create(canvas) {
         // Block WebGL on this canvas so createRenderer falls back to Canvas2D
-        const origGetContext = canvas.getContext.bind(canvas);
-        canvas.getContext = ((id: string, ...args: any[]) => {
+        const origGetContext = canvas.getContext.bind(canvas) as (...args: unknown[]) => unknown;
+        canvas.getContext = ((id: string, ...args: unknown[]) => {
           if (id === 'webgl' || id === 'webgl2') return null;
           return origGetContext(id, ...args);
-        }) as any;
+        }) as typeof canvas.getContext;
         try {
           return createWebGLRenderer({ canvas });
         } catch {

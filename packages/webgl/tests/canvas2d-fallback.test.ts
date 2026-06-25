@@ -18,12 +18,13 @@ const originalGetContext = HTMLCanvasElement.prototype.getContext;
 
 function blockWebGL() {
   HTMLCanvasElement.prototype.getContext = function (
+    this: HTMLCanvasElement,
     contextId: string,
-    ...args: any[]
+    ...args: unknown[]
   ) {
     if (contextId === 'webgl' || contextId === 'webgl2') return null;
-    return originalGetContext.call(this, contextId, ...args);
-  } as any;
+    return (originalGetContext as (...a: unknown[]) => unknown).call(this, contextId, ...args);
+  } as typeof HTMLCanvasElement.prototype.getContext;
 }
 
 function restoreWebGL() {
