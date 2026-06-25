@@ -21,7 +21,7 @@ export async function initFFmpeg(onProgress?: (ratio: number) => void): Promise<
 export async function convertToStackedAlpha(inputFile: File): Promise<Blob> {
   if (!ffmpeg) throw new Error('FFmpeg not initialized');
 
-  const ext = inputFile.name.split('.').pop() ?? 'mp4';
+  const ext = (inputFile.name.split('.').pop() ?? 'mp4').toLowerCase();
   const inputName = `input.${ext}`;
   const outputName = 'output.mp4';
 
@@ -34,7 +34,10 @@ export async function convertToStackedAlpha(inputFile: File): Promise<Blob> {
     '[top_rgb][alpha_gray]vstack=inputs=2',
   ].join(';');
 
+  const decoderArgs = ext === 'webm' ? ['-c:v', 'libvpx-vp9'] : [];
+
   await ffmpeg.exec([
+    ...decoderArgs,
     '-i', inputName,
     '-filter_complex', filterComplex,
     '-c:v', 'libx264',
