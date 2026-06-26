@@ -31,9 +31,12 @@ export function createBackstorySection(): HTMLElement {
         <h3>Archibald's Implementation</h3>
         <p>
           After developing this concept, we discovered Jake Archibald had published
-          <a href="https://github.com/nickytonline/stacked-alpha-video"
+          <a href="https://jakearchibald.com/2024/video-with-transparency/"
+             target="_blank" style="color: var(--color-accent-light);">an article</a>
+          and the
+          <a href="https://github.com/jakearchibald/stacked-alpha-video"
              target="_blank" style="color: var(--color-accent-light);">stacked-alpha-video</a>
-          &mdash; an elegant Web Component using WebGL shaders. However, it creates
+          Web Component using WebGL shaders. However, it creates
           a separate WebGL context per video element. Browsers limit active WebGL
           contexts to roughly 8&ndash;16, so pages with many transparent videos would
           lose contexts and break rendering.
